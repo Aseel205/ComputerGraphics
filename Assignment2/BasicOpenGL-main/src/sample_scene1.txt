@@ -1,0 +1,8 @@
+e 0.0 0.0 0.0 1.0    # Camera position at (0.0, 0.0, 0.0), looking down negative Z-axis
+a 180 0.0 0.0 1.0    # Global Ambient Intensity set to red (dim red light)
+
+d 0.0 0.0 -1.0 0.0  # Directional light pointing down the negative Z-axis
+i 1.0 0.0 0.0 1.0   # Light intensity set to red (intense red light)
+
+o 0.0 0.0 -5.0 1.0  # Sphere center at (0.0, 0.0, -5.0), radius 1.0
+c 0.8 0.2 0.2 32.0  # Sphere color (red) with shininess 32
