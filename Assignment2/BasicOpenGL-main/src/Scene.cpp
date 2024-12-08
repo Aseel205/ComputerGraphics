@@ -9,40 +9,89 @@ void Material::print() const {
               << ", Shininess: " << shininess << std::endl;
 }
 
-// LightSource base class
-LightSource::LightSource(const glm::vec3& intensity) : intensity(intensity) {}
+// LightSource clas
+LightSource::LightSource(const glm::vec3& intensity , const glm::vec3& direction)
+    : intensity(intensity), direction(direction)  {}
 
+// ignore thesase functions /////////////////////////
+
+
+void LightSource::print() const
+{
+ }
+
+bool LightSource::isDirectional() const
+{
+    return false;
+}
+
+bool LightSource::isSpotlight() const
+{
+    return false;
+}
+
+////////////////////////////////////////////
 // DirectionalLight class
-DirectionalLight::DirectionalLight(const glm::vec3& direction, const glm::vec3& intensity)
-    : LightSource(intensity), direction(glm::normalize(direction)) {}
+DirectionalLight::DirectionalLight(const glm::vec3& intensity , const glm::vec3& direction)
+    : LightSource(intensity, direction)  {} 
+
+
 
 void DirectionalLight::print() const {
-    std::cout << "Directional Light - Direction: " << glm::to_string(direction)
-              << ", Intensity: " << glm::to_string(intensity) << std::endl;
+    std::cout << "Directional Light, Intensity: (" 
+              << intensity.x << ", " << intensity.y << ", " << intensity.z << ")"
+              << ", Direction: (" 
+              << direction.x << ", " << direction.y << ", " << direction.z << ")"
+              << std::endl;
 }
+
 
 // Spotlight class
-Spotlight::Spotlight(const glm::vec3& position, float cutoff, const glm::vec3& intensity)
-    : LightSource(intensity), position(position), cutoff(cutoff) {}
+
+
+Spotlight::Spotlight(const glm::vec3& intensity,const glm::vec3& direction,float cutoff, const glm::vec3& position)
+    : LightSource(intensity, direction), cutoff(cutoff), position(position) {};
+
 
 void Spotlight::print() const {
-    std::cout << "Spotlight - Position: " << glm::to_string(position)
-              << ", Cutoff: " << cutoff
-              << ", Intensity: " << glm::to_string(intensity) << std::endl;
+    std::cout << "Spotlight, Intensity:(" << intensity.x << ", " << intensity.y << ", " << intensity.z << ")"
+              << ", Direction: "<< direction.x << ", " << direction.y << ", " << direction.z << ")"
+              << ", Position: " << position.x << ", " << position.y << ", " << position.z << ")"
+              << ", Cutoff: " << cutoff << std::endl;
 }
 
-// Object base class
-Object::Object(const Material& material, Type type) : material(material), type(type) {}
 
-    void Object ::setMaterial(Material& material) {
-            this-> material  = material ; 
-    }
+// you can ignore this two methods
+bool Object::isSphere() const
+{
+    return false;
+}
+
+bool Object::isPlane() const
+{
+    return false;
+}
+//////////////////////////////////
 
 
+void Object ::setMaterial(Material &material)
+{
+    this->material = material;
+}
 
-// Sphere class
-Sphere::Sphere(const glm::vec3& center, float radius, const Material& material)
-    : Object(material, Type::Sphere), center(center), radius(radius) {}
+// Sphere Class
+Sphere::Sphere(const Material& material, int status, const glm::vec3& center, float radius) {
+    this->material = material;
+    this->status = status;
+    this->center = center;
+    this->radius = radius;
+}
+
+Sphere::Sphere(int status, const glm::vec3& center, float radius) {
+    this->status = status;
+    this->center = center;
+    this->radius = radius;
+}
 
 void Sphere::print() const {
     std::cout << "Sphere - Center: " << glm::to_string(center)
@@ -50,8 +99,7 @@ void Sphere::print() const {
     material.print();
 }
 
-
-bool Sphere::Intersect(Ray &ray) {
+bool Sphere::Intersect(Ray& ray, float& t) {
     // Calculate the vector from the ray origin to the sphere center
     glm::vec3 oc = ray.origin - center;
 
@@ -68,51 +116,70 @@ bool Sphere::Intersect(Ray &ray) {
         return false;
     }
 
-    // If the discriminant is non-negative, there are intersections
     // Calculate the two solutions (t1 and t2)
     float sqrtDiscriminant = sqrt(discriminant);
     float t1 = (-b - sqrtDiscriminant) / (2.0f * a);
     float t2 = (-b + sqrtDiscriminant) / (2.0f * a);
 
-    // Find the smallest positive t value
+    // Determine the smallest positive t value
     if (t1 >= 0 && t2 >= 0) {
-        return true;  // Intersection in front of the ray
+        t = fmin(t1, t2); // Choose the closer intersection
+        return true;
     }
     if (t1 >= 0) {
-        return true;  // Use the first intersection if it's in front
+        t = t1; // Use the first intersection if it's valid
+        return true;
     }
     if (t2 >= 0) {
-        return true;  // Use the second intersection if it's in front
+        t = t2; // Use the second intersection if it's valid
+        return true;
     }
 
-    return false;  // No valid intersection (both solutions are negative)
+    // No valid intersection
+    return false;
 }
 
 
-// Plane class
-Plane::Plane(const glm::vec4& coefficients, const Material& material)
-    : Object(material, Type::Plane), coefficients(coefficients) {}
+// Plane Class
 
+Plane::Plane(const Material& material, int status, const glm::vec4& coefficients) {
+    this->material = material;
+    this->status = status;
+    this->coefficients = coefficients;
+}
 
-bool Plane::Intersect(Ray& ray)  {
-    // Extract the plane normal and d from coefficients
-    glm::vec3 normal(coefficients.x, coefficients.y, coefficients.z);
+Plane::Plane(int status, const glm::vec4& coefficients) {
+    this->status = status;
+    this->coefficients = coefficients;
+}
+
+bool Plane::Intersect(Ray& ray, float& t) {
+    // Extract plane coefficients
+    float a = coefficients.x;
+    float b = coefficients.y;
+    float c = coefficients.z;
     float d = coefficients.w;
 
-    // Calculate the denominator of the intersection formula
+    // Compute the dot product of the plane normal and the ray direction
+    glm::vec3 normal(a, b, c);
     float denominator = glm::dot(normal, ray.direction);
 
     // If the denominator is close to zero, the ray is parallel to the plane
-    if (fabs(denominator) < 1e-6) {
-        return false;
+    if (glm::abs(denominator) < 1e-6) {
+        return false; // No intersection
     }
 
-    // Calculate the t value for the intersection point
-    float t = -(glm::dot(normal, ray.origin) + d) / denominator;
+    // Calculate the numerator
+    float numerator = -(glm::dot(normal, ray.origin) + d);
 
-    // Return true if the intersection is in the positive direction of the ray
+    // Calculate the intersection distance (t)
+    t = numerator / denominator;
+
+    // If t is negative, the intersection is behind the ray's origin
     return t >= 0;
 }
+
+
 
 
 
@@ -142,6 +209,7 @@ Scene::Scene(const Eye& eye, const Ambient& ambient)
     : eye(eye), ambient(ambient) {}
 
 
+
 void Scene::addLight(LightSource* light) {
     lights.push_back(light);
 }
@@ -159,6 +227,12 @@ void Scene::print() const {
 
 }
 
+int  Scene :: getNumLights ()   {
+    return lights.size() ;
+
+} 
+
+
 
 Scene::~Scene() {
         // Delete dynamically allocated light sources and objects
@@ -170,14 +244,58 @@ Scene::~Scene() {
         }
 }
 
-// Intersection Class
-Intersection:: Intersection() : point(glm::vec3(0.0f)), normal(glm::vec3(0.0f)), t(0.0f), hit(false) {}
 
-Intersection::Intersection(const glm::vec3& point, const glm::vec3& normal, float t, bool hit)
-    : point(point), normal(normal), t(t), hit(hit) {}
+Intersection Scene::GetHit(Ray& ray) {
+    Intersection closestIntersection;
+    closestIntersection.t = std::numeric_limits<float>::infinity(); // Start with a very large value
+    closestIntersection.hitObject = false;
+
+    for (Object* obj : objects) {
+        float t = 0.0f;
+        if (obj->Intersect(ray, t)) {
+            if (t < closestIntersection.t) {
+                closestIntersection.t = t;
+                closestIntersection.point = ray.pointAtParameter(t);
+
+                // Compute the normal at the intersection point and get the material
+                if (obj->isPlane()) {
+                    Plane* plane = dynamic_cast<Plane*>(obj);
+                    glm::vec3 normal(plane->coefficients.x, plane->coefficients.y, plane->coefficients.z);
+                    closestIntersection.normal = glm::normalize(normal);
+                    closestIntersection.material = plane->material;  // Set material from Plane
+                    closestIntersection.ObjectType = "Plane"; // Set ObjectType to "Plane"
+                } else if (obj->isSphere()) {
+                    Sphere* sphere = dynamic_cast<Sphere*>(obj);
+                    closestIntersection.normal = glm::normalize(closestIntersection.point - sphere->center);
+                    closestIntersection.material = sphere->material;  // Set material from Sphere
+                    closestIntersection.ObjectType = "Sphere"; // Set ObjectType to "Sphere"
+                }
+
+                closestIntersection.hitObject = true;
+            }
+        }
+    }
+
+    return closestIntersection;
+}
+
+
+
+ LightSource *   Scene::getLight(int num)
+{
+    return lights.at(num) ; 
+}
+
+
+
+// Intersection Class
+Intersection:: Intersection() : point(glm::vec3(0.0f)), normal(glm::vec3(0.0f)), t(0.0f), hitObject(false) {}
+
+Intersection::Intersection(const glm::vec3& point, const glm::vec3& normal, float t, bool hitObject)
+    : point(point), normal(normal), t(t), hitObject(hitObject) {}
 
 bool  Intersection:: isValid() const {
-    return hit;
+    return hitObject;
 }
 
 

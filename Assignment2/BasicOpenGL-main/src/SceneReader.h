@@ -17,8 +17,7 @@ SceneReader() : eye(nullptr), ambient(nullptr) {}
 
 // Function to load scene data from a file
 Scene* readScene(const std::string& filename);
-
-void generateRays(Scene& scene) ; 
+static  Ray  ConstructRayThroughPixel(int i  , int j , Scene & scene ) ; 
 
 
 };

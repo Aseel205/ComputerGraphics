@@ -34,7 +34,7 @@ public:
 class Material {
 public:
     glm::vec3 color;  // Ambient and diffuse material color (r, g, b)
-    float shininess;  // Shininess value   zero or one 
+    float shininess;  //the power of V*R
 
     Material(const glm::vec3& color = glm::vec3(1.0f), float shininess = 0.0f);
 
@@ -44,24 +44,32 @@ public:
 // Base class for all light sources
 class LightSource {
 public:
+
+    glm::vec3 direction ;
     glm::vec3 intensity;  // Light intensity (r, g, b)
 
-public:
-    LightSource(const glm::vec3& intensity);
+    LightSource(const glm::vec3& intensity , const glm::vec3& direction) ;
 
-    virtual ~LightSource() = default;   //  this is a destructor
+    virtual ~LightSource() = default;  // Destructor
 
-    virtual void print() const = 0;
+    virtual void print() const ;
+
+    virtual bool isDirectional() const ;  
+    virtual bool isSpotlight() const ;   
 };
 
 // Derived class for directional lights
 class DirectionalLight : public LightSource {
 public:
-    glm::vec3 direction; // Light direction (normalized)
 
-    DirectionalLight(const glm::vec3& direction, const glm::vec3& intensity);
+
+    DirectionalLight(const glm::vec3& intensity , const glm::vec3& direction) ;
+    bool isDirectional() const override { return true; }
+    bool isSpotlight() const override { return false; }
 
     void print() const override;
+
+
 };
 
 // Derived class for spotlights
@@ -70,29 +78,30 @@ public:
     glm::vec3 position;  // Spotlight position
     float cutoff;        // Spotlight cutoff angle (cosine)
 
-    Spotlight(const glm::vec3& position, float cutoff, const glm::vec3& intensity);
+    Spotlight(const glm::vec3& intensity,const glm::vec3& direction,float cutoff, const glm::vec3& position) ; 
+    bool isDirectional() const override { return false; }
+    bool isSpotlight() const override { return true ; }
 
     void print() const override;
+
+    
 };
 
 // Base class for scene objects
 class Object {
 public:
-    enum class Type { Sphere, Plane };
 
+    float  status ;   //  (object , transparent , reflective , 0 , 0.5 ,1)
     Material material;
-    Type type;
 
-    Object(const Material& material, Type type);
+  //  Object(const Material& material,   int Shininess);
+
+    virtual bool isSphere() const ;  
+    virtual bool isPlane() const ;   
 
     virtual ~Object() = default;
-
     void setMaterial(Material& material );
-
-
-    virtual bool Intersect(Ray& ray) = 0; // Mark const for immutability
-
-    
+    virtual bool Intersect(Ray& ray, float& t)= 0; // Mark const for immutability
     virtual void print() const = 0;
 };
 
@@ -102,13 +111,18 @@ public:
     float radius;     // Radius of the sphere
 
     // Constructor
-    Sphere(const glm::vec3& center, float radius, const Material& material) ; 
+    Sphere( const Material& material , int status ,const glm::vec3& center, float radius) ;  
+    Sphere (int status ,const glm::vec3& center, float radius) ; 
         
-
-   bool Intersect( Ray& ray)  override;
-
-
+    // funcitons
+    bool Intersect(Ray& ray, float & t)  override;
     void print() const override;
+
+
+    bool isSphere() const override { return true; }
+    bool isPlane() const override { return false; }
+    
+
 };
 
 class Plane : public Object {
@@ -116,13 +130,20 @@ public:
     glm::vec4 coefficients; // Plane equation coefficients (a, b, c, d)
 
     // Constructor
-    Plane(const glm::vec4& coefficients, const Material& material) ; 
-
-   bool Intersect( Ray& ray)  override;
-
+    Plane(const Material& material, int status , const glm::vec4& coefficients) ; 
+    Plane(int status , const glm::vec4& coefficients);
 
 
+    // fucntions
+    bool Intersect(Ray& ray, float & t)  override;
     void print() const  override;
+
+
+    
+    bool isSphere() const override { return false; }
+    bool isPlane() const override { return true; }
+
+  
 }; 
 
 // Eye class to represent the camera
@@ -146,6 +167,28 @@ public:
     void print() const;
 };
 
+class Intersection {
+public:
+    glm::vec3 point;      // The intersection point in 3D space
+    glm::vec3 normal;     // The normal vector at the intersection
+    Material  material ;
+    float t;              // The parameter 't' of the ray at the intersection point
+    bool hitObject;             // Boolean flag indicating whether the intersection occurred
+    std::string ObjectType ; 
+
+    // Default constructor
+    Intersection(); 
+
+    // Constructor with specific values
+    Intersection(const glm::vec3& point, const glm::vec3& normal, float t, bool hitObject);
+        
+
+    // Function to check if the intersection is valid
+    bool isValid() const ;
+};
+
+
+
 // Scene class to hold all components
 class Scene {
 public:
@@ -161,28 +204,16 @@ public:
 
     void addLight(LightSource* light);
     void addObject(Object* obj) ;
+    int  getNumLights () ; 
+    Intersection GetHit (Ray& ray )  ; 
+
+    LightSource *  getLight (int num) ;  
 
     void print() const;
 };
 
 
-class Intersection {
-public:
-    glm::vec3 point;      // The intersection point in 3D space
-    glm::vec3 normal;     // The normal vector at the intersection
-    float t;              // The parameter 't' of the ray at the intersection point
-    bool hit;             // Boolean flag indicating whether the intersection occurred
-
-    // Default constructor
-    Intersection(); 
-
-    // Constructor with specific values
-    Intersection(const glm::vec3& point, const glm::vec3& normal, float t, bool hit);
-        
-
-    // Function to check if the intersection is valid
-    bool isValid() const ;
-}; 
+ 
 
 
 #endif

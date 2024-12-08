@@ -4,159 +4,140 @@
 #include <stdexcept>
 #include "scene.h"
 #include "SceneReader.h"
-
+#include <bits/unique_ptr.h>
+#include <bits/shared_ptr.h>
 #define WIDTH 800
 #define HEIGHT 800
 
-
-
-    Scene* SceneReader::readScene(const std::string& filePath) {
+        Scene* SceneReader::readScene(const std::string& filePath) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open scene file.");
     }
 
-    Eye* eye = nullptr;
-    Ambient* ambient = nullptr;
-    Scene* scene = nullptr;
+
+    Eye eye(glm::vec3(0.0f));
+    Ambient ambient(glm::vec3(0.0f));
     std::vector<LightSource*> lights;
     std::vector<Object*> objects;
-    std::vector<Material> materials;
 
     std::string line;
+    std::vector<glm::vec3> lightDirections, lightIntensities;
+    std::vector<glm::vec4> spotlightPositions; // x, y, z, cutoff
+    std::vector<Material> materials;
+
     while (std::getline(file, line)) {
-        std::istringstream ss(line);
-        char identifier;
-        ss >> identifier;
+        std::istringstream iss(line);
+        std::string token;
+        iss >> token;
 
-        if (identifier == 'e') {
-            glm::vec3 eyePos;
+        if (token == "e") { // Eye
+            glm::vec3 position;
             float modeFlag;
-            ss >> eyePos.x >> eyePos.y >> eyePos.z >> modeFlag;
-            eye = new Eye(eyePos, static_cast<int>(modeFlag));
+            iss >> position.x >> position.y >> position.z >> modeFlag;
+            eye = Eye(position, static_cast<int>(modeFlag));
         } 
-        else if (identifier == 'a') {
-            glm::vec3 ambientColor;
-            float unused;
-            ss >> ambientColor.x >> ambientColor.y >> ambientColor.z >> unused;
-            ambient = new Ambient(ambientColor);
-        } 
-       else if (identifier == 'd') {
-          glm::vec3 direction;
-            float flag;
-            ss >> direction.x >> direction.y >> direction.z >> flag;
-
-            if (flag == 1.0f) {
-                // You need to have position, cutoff, and intensity for Spotlight
-                glm::vec3 position(0.0f, 0.0f, 0.0f);  // Set a default position
-                float cutoff = 0.9f;  // Set a default cutoff value
-                glm::vec3 intensity(1.0f, 1.0f, 1.0f); // Set a default intensity
-
-                lights.push_back(new Spotlight(position, cutoff, intensity));  // Pass all 3 parameters
-            } else {
-                lights.push_back(new DirectionalLight(direction, glm::vec3(1.0f)));
-            }
-        } 
-        else if (identifier == 'p') { // Spotlight position
-            glm::vec3 position;
-            float cutoff;
-            ss >> position.x >> position.y >> position.z >> cutoff;
-
-            Spotlight* spotlight = nullptr;
-
-            // Check if there's an existing spotlight; if not, create one
-            if (!lights.empty() && dynamic_cast<Spotlight*>(lights.back())) {
-                spotlight = static_cast<Spotlight*>(lights.back());
-            } else {
-                // Create a new spotlight with default intensity if none exists
-                spotlight = new Spotlight(position , cutoff  , glm::vec3(1.0f) );
-                lights.push_back(spotlight);
-            }
-
-            // Set spotlight properties
-            spotlight->position = position;
-            spotlight->cutoff = cutoff;
-        }
-
-        else if (identifier == 'i') {
+        else if (token == "a") { // Ambient
             glm::vec3 intensity;
-            float unused;
-            ss >> intensity.x >> intensity.y >> intensity.z >> unused;
-
-            if (lights.empty()) {
-                throw std::runtime_error("Unexpected 'i' without a preceding light source.");
+            float ignore;
+            iss >> intensity.x >> intensity.y >> intensity.z >> ignore;
+            ambient = Ambient(intensity);
+        } 
+        else if (token == "d") { // Light direction
+            glm::vec3 direction;
+            float type;
+            iss >> direction.x >> direction.y >> direction.z >> type;
+            lightDirections.push_back(direction);
+        } 
+        else if (token == "p") { // Spotlight position
+            glm::vec4 position;
+            iss >> position.x >> position.y >> position.z >> position.w;
+            spotlightPositions.push_back(position);
+        } 
+        else if (token == "i") { // Light intensity
+            glm::vec3 intensity;
+            float ignore;
+            iss >> intensity.x >> intensity.y >> intensity.z >> ignore;
+            lightIntensities.push_back(intensity);
+        } 
+        else if (token == "o" || token == "r" || token == "t") { // Objects
+            glm::vec4 objData;
+            iss >> objData.x >> objData.y >> objData.z >> objData.w;
+            Material material;
+            float status = (token == "o") ? 0.0f : (token == "r") ? 0.5f : 1.0f;
+            if (objData.w > 0) { // Sphere
+                objects.push_back(new Sphere(status, glm::vec3(objData.x, objData.y, objData.z), objData.w));
+            } else { // Plane
+                objects.push_back(new Plane(status, objData));
             }
-            lights.back()->intensity = intensity;
         } 
-        else if (identifier == 'o' || identifier == 'r' || identifier == 't') {
-            glm::vec3 position;
-            float size;
-            ss >> position.x >> position.y >> position.z >> size;
-            glm::vec4 v4 = glm::vec4(position.x, position.y, position.z, size);
-
-
-            if(size >0)
-                objects.push_back(new Sphere(position, size, Material())); // Temporary material
-            else 
-                objects.push_back(new Plane(v4 ,  Material())); // Temporary material
-
-             
-
-
-        } 
-        else if (identifier == 'c') {
+        else if (token == "c") { // Materials
             glm::vec3 color;
             float shininess;
-            ss >> color.x >> color.y >> color.z >> shininess;
-
+            iss >> color.x >> color.y >> color.z >> shininess;
             materials.emplace_back(color, shininess);
         }
     }
 
-    // Assign materials to objects
-    if (materials.size() != objects.size()) {
-        throw std::runtime_error("Mismatch between objects and materials.");
-    }
+    // Associate materials with objects
     for (size_t i = 0; i < objects.size(); ++i) {
-        objects[i]->setMaterial(materials[i]);
-    }
-
-    // Build scene
-    if (eye && ambient) {
-        scene = new Scene(*eye, *ambient);
-        for (auto* light : lights) {
-            scene->addLight(light);
-        }
-        for (auto* obj : objects) {
-            scene->addObject(obj);
+        if (i < materials.size()) {
+            objects[i]->setMaterial(materials[i]);
         }
     }
 
-    file.close();
+    // Create light sources
+    size_t spotlightIndex = 0;
+    for (size_t i = 0; i < lightDirections.size(); ++i) {
+        glm::vec3 direction = lightDirections[i];
+        glm::vec3 intensity = lightIntensities[i];
+        if (i < spotlightPositions.size()) { // Spotlight
+            glm::vec4 position = spotlightPositions[spotlightIndex++];
+        
+
+            lights.push_back(new Spotlight(intensity, direction ,  position.w, glm::vec3(position.x, position.y, position.z)));
+        } else { // Directional Light
+
+            lights.push_back(new DirectionalLight(intensity , direction));
+        }
+    }
+
+    // Create the scene
+    Scene* scene = new Scene(eye, ambient);
+    for (auto light : lights) {
+        scene->addLight(light);
+    }
+    for (auto object : objects) {
+        scene->addObject(object);
+    }
+
     return scene;
 }
 
 
+    Ray SceneReader::ConstructRayThroughPixel(int x, int y, Scene& scene) {
+        float aspect_ratio = float(WIDTH) / float(HEIGHT);
+        float viewport_height = 2.5f;
+        float viewport_width = aspect_ratio * viewport_height;
 
-    // void generateRays(Scene* scene )
-void SceneReader:: generateRays(Scene& scene) {
-    float aspect_ratio = float(WIDTH) / float(HEIGHT);  // 800/600 = 1.333
-    float viewport_height = 2.0f;
-    float viewport_width = aspect_ratio * viewport_height;
+        // Pixel size in the viewport
+        float pixel_width = viewport_width / float(WIDTH);
+        float pixel_height = viewport_height / float(HEIGHT);
 
-    glm::vec3 horizontal(viewport_width, 0.0f, 0.0f);
-    glm::vec3 vertical(0.0f, viewport_height, 0.0f);
-    glm::vec3 lower_left_corner = scene.eye.position - horizontal / 2.0f - vertical / 2.0f - glm::vec3(0.0f, 0.0f, 1.0f);
+        // Calculate pixel center coordinates in the viewport
+        float pixel_center_x = -viewport_width / 2.0f + (x + 0.5f) * pixel_width;
+        float pixel_center_y = -viewport_height / 2.0f + (y + 0.5f) * pixel_height;
 
-    for (int j = 0; j < HEIGHT; ++j) {
-        for (int i = 0; i < WIDTH; ++i) {
-            float u = float(i) / float(WIDTH);
-            float v = float(j) / float(HEIGHT);
-            glm::vec3 direction = lower_left_corner + horizontal * u + vertical * v - scene.eye.position;
-            scene.rays[j][i] = Ray(scene.eye.position, direction);
-        }
+        // Ray origin and direction
+        glm::vec3 origin = scene.eye.position;
+        glm::vec3 direction = glm::normalize(glm::vec3(pixel_center_x, pixel_center_y, -1.0f) - origin);
+
+        return Ray(origin, direction);
     }
-}
+
+
+
+
 
 
 
