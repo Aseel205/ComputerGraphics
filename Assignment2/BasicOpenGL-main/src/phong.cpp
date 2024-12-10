@@ -2,119 +2,112 @@
 #include "Scene.h"
 #include <glm/glm.hpp>
 
-glm::vec3 Phong::calcColor(Scene& scene, Ray& ray) {
+int globalCounter = 0;
+
+
+glm::vec3 getSphereDiffuseColor(const LightSource *light, Scene &scene, Intersection &hit) ; 
+
+
+glm::vec3 Phong::calcColor(Scene &scene, Ray &ray) {
+
+    globalCounter ++ ; 
     // Get the intersection point
     Intersection hit = scene.GetHit(ray);
 
-    // If there's no hit, return black (background)
-    if (!hit.hitObject) {
-        return glm::vec3(0.0f, 0.0f, 0.0f); // Black color    
-    }
-
- 
-    glm::vec3 color = calcEmissionColor(scene) + calcAmbientColor(scene ,hit );   
-
-    for (int i = 0; i < scene.getNumLights(); i++) {
-        LightSource* light = scene.getLight(i); // Use pointer instead of copying
-
-      
-        
-            if (hit.ObjectType.compare("Sphere") == 0 ) 
-                color += calcDiffuseColor(scene, hit, light) + calcSpecularColor(scene, hit, light);
-            
-
-            if (hit.ObjectType.compare("Plane") == 0 ) {
-                // Plane: Apply checkerboard pattern for diffuse color
-                return   checkerboardColor(hit.material.color, hit);
-
-            //    glm::vec3 planeDiffuseColor = checkerboardColor(hit.material.color, hit);
-                
-            //    color +=  + planeDiffuseColor + calcSpecularColor(scene, hit, light);
-
-            }
-            
-        }
+    // Start with emission and ambient components
+    glm::vec3 color = calcEmissionColor(scene)  +  calcAmbientColor(scene, hit);
     
+        
+    // Add diffuse contributions from all lights
+    for (int i = 0; i < scene.getNumLights(); i++) {
+        LightSource *light = scene.getLight(i); // Use pointer instead of copying
+
+    if(!occluded(scene, hit, light))
+
+       color += (calcDiffuseColor(scene,hit, light) + calcSpecularColor(scene,hit, light) )* light->intensity   ;
+        //color += (calcSpecularColor(scene,hit, light) )* light->intensity   ;
+
+
+    }
 
     return color;
+
 }
-
-
-// function from the Assigment 
-glm::vec3 Phong::checkerboardColor(glm::vec3 rgbColor, Intersection& hitPoint) {
+glm:: vec3 Phong ::checkerboardColor(glm::vec3 rgbColor, glm :: vec3 hitPoint) {
+// Checkerboard pattern
     float scaleParameter = 0.5f;
-
-    // Calculate checkerboard coordinates by scaling and flooring
-    float x = floor(hitPoint.point.x / scaleParameter);
-    float y = floor(hitPoint.point.y / scaleParameter);
-
-    // Determine if the cell is "white" or "black" based on even/odd sum of coordinates
-    bool isCheckerboardWhite = static_cast<int>(x + y) % 2 == 0;
-
-    if (isCheckerboardWhite) {
-        return rgbColor; // Original color for "white" cells
-    } else {
-        return 0.5f * rgbColor; // Dimmed color for "black" cells
+    float checkerboard = 0;
+    if (hitPoint.x < 0) {
+        checkerboard += floor((0.5 - hitPoint.x) / scaleParameter);
     }
+    else {
+        checkerboard += floor(hitPoint.x / scaleParameter);
+    }
+    if (hitPoint.y < 0) {
+        checkerboard += floor((0.5 - hitPoint.y) / scaleParameter);
+    }
+    else {
+        checkerboard += floor(hitPoint.y / scaleParameter);
+    }
+    checkerboard = (checkerboard * 0.5) - int(checkerboard * 0.5);
+    checkerboard *= 2;
+    if (checkerboard > 0.5) {
+        return 0.5f * rgbColor;
+    }
+return rgbColor;
 }
-
-
-
-
-
-
 
 
 // phong funcitons
 
-glm::vec3 Phong::calcAmbientColor(Scene& scene, Intersection& hit ) {
-    glm::vec3 ambientIntensity = scene.ambient.intensity ; 
+glm::vec3 Phong::calcAmbientColor(Scene &scene, Intersection &hit)
+{
+    glm::vec3 ambientIntensity = scene.ambient.intensity;   
 
-
-    return ambientIntensity * hit.material.color ;
+    return scene.ambient.intensity *  hit.getColor();
 }
 
-
-glm::vec3 Phong::calcEmissionColor(Scene& scene) {
-// Since the emission is (0, 0, 0), return that directly
+glm::vec3 Phong::calcEmissionColor(Scene &scene)
+{
     return glm::vec3(0.0f, 0.0f, 0.0f); // No emission
 }
 
 
+
+
 glm::vec3 Phong::calcDiffuseColor(Scene& scene, Intersection &hit, LightSource* light) {
-    glm::vec3 Li;
+    glm::vec3 Li; // intersection to the light
     glm::vec3 diffuseColor;
-    glm::vec3 N = glm::normalize(hit.normal);
-    glm :: vec3 KD ; 
+    glm::vec3 N = glm::normalize(hit.normal);   // Intersection normal 
+    glm::vec3 KD = hit.getColor();   // the rgb of C 
+
 
     // Check the light type
     if (light->isDirectional()) {
         DirectionalLight* dirLight = static_cast<DirectionalLight*>(light);  // Cast to DirectionalLight
 
-        Li = dirLight->intensity ;
-        float dotLN = glm::dot(Li, N);
+        // Directional light: direction is constant for all points
+        Li = -glm::normalize(dirLight->direction); // Light vector is negative of the light's direction
+        float dotLN = glm::dot(N,Li);
         dotLN = glm::max(0.0f, dotLN);  // Ensure no negative value
-        KD = hit.material.color ; 
 
         // Calculate the diffuse color
-        diffuseColor = KD * dotLN;    //  perfect 
+        diffuseColor = KD * dotLN ; // Include light intensity
     }
     else if (light->isSpotlight()) {
-        // Spotlight: The light has a position, a cutoff angle, and intensity diminishes with angle
-
         Spotlight* spotLight = static_cast<Spotlight*>(light);  // Cast to Spotlight
-        Li = spotLight->intensity ; 
-        float dotLN = glm::dot(Li, N);
+
+        // Spotlight: Vector from hit point to light position
+        Li = glm::normalize(spotLight->position - hit.point);
+        float dotLN = glm::dot(N,Li);
         dotLN = glm::max(0.0f, dotLN);  // Ensure no negative value
-        KD = hit.material.color ; 
 
-        diffuseColor = KD * dotLN;    //  perfect 
-
+        // Calculate the diffuse color with spotlight intensity
+        diffuseColor = KD * dotLN ; // Include light intensity
     }
 
-    return diffuseColor;
+    return diffuseColor ;
 }
-
 
 
 
@@ -147,39 +140,76 @@ glm::vec3 Phong::calcSpecularColor(Scene &scene, Intersection &hit, LightSource 
     float specularFactor = glm::pow(specDot, n);  // Raise to the power of shininess
 
     // Step 6: Calculate the final specular color using the formula
-    glm::vec3 specularColor = Ks * specularFactor * light->intensity;  // Include light intensity
+    glm::vec3 specularColor = Ks * specularFactor ; 
 
     // Return the computed specular color
     return specularColor;
 }
 
 
-bool Phong::occluded(Intersection& hit, Scene& scene, LightSource* light) {
+
+bool Phong::occluded(Scene &scene, Intersection &hit, LightSource *light) {
     glm::vec3 lightDir;
 
     // Determine light direction based on light type
     if (light->isDirectional()) {
         // For directional light, the direction is fixed
-        lightDir = -glm::normalize(dynamic_cast<DirectionalLight*>(light)->direction);
+        lightDir = -glm::normalize(dynamic_cast<DirectionalLight *>(light)->direction);
     } else if (light->isSpotlight()) {
         // For spotlight, the direction is from the hit point to the light position
-        lightDir = glm::normalize(dynamic_cast<Spotlight*>(light)->position - hit.point);
+        Spotlight *spotLight = dynamic_cast<Spotlight *>(light);
+        lightDir = glm::normalize(spotLight->position - hit.point);
+
+        // Check if the hit point is within the cutoff angle of the spotlight
+        if (!spotLight->isWithinCutoff(hit.point)) {
+            return true; // The point is outside the spotlight's cone, so it's occluded
+        }
     }
 
+    // Small offset to avoid self-intersection
+    glm::vec3 shadowRayOrigin = hit.point + hit.normal * 1e-4f;
+
     // Create a ray from the intersection point towards the light source
-    Ray shadowRay(hit.point + 0.001f * hit.normal, lightDir);  // Small offset to avoid self-intersection
+    Ray shadowRay(shadowRayOrigin, lightDir);
 
     // Get the intersection from the shadow ray
     Intersection shadowIntersection = scene.GetHit(shadowRay);
 
-    // If the intersection is closer than the distance to the light, it's occluded
-    if (shadowIntersection.hitObject) {
-        // Ensure we are checking that the occlusion is not from the same object or already hit object
-        float distanceToLight = glm::length(shadowRay.direction);
-        if (shadowIntersection.t < distanceToLight) {
-            return true;  // The point is occluded by another object
+    // Directional Light: Check only if there's any hit
+    if (light->isDirectional()) {
+        return shadowIntersection.hitObject; // Any hit means the light is occluded
+    }
+
+    // Spotlight: Check if the intersection is closer than the light position
+    if (light->isSpotlight()) {
+        Spotlight *spotLight = dynamic_cast<Spotlight *>(light);
+        float lightDistance = glm::length(spotLight->position - shadowRayOrigin);
+
+        // If there's a hit and it's closer than the light, the light is occluded
+        if (shadowIntersection.hitObject && shadowIntersection.t < lightDistance) {
+            return true; // The point is occluded by another object
         }
     }
 
-    return false;  // No occlusion, the light is not blocked
+    return false; // No occlusion, the light is not blocked
+}
+
+
+glm::vec3 getSphereDiffuseColor(const LightSource *light, Scene &scene, Intersection &hit)
+{
+    glm::vec3 diffuseColor(0.0f);
+
+    // Lambertian Diffuse Reflection Coefficient (Sphere color)
+    glm::vec3 Kd = hit.getColor(); // Material color at the intersection point
+
+    // Calculate the light direction (from intersection point to the light)
+    glm::vec3 lightDirection = glm::normalize(-light->direction);
+
+    // Compute the cosine of the angle between the normal and the light direction
+    float cosTheta = glm::max(glm::dot(glm::normalize(hit.normal), lightDirection), 0.0f);
+
+    // Compute the diffuse reflection component
+    diffuseColor = Kd * cosTheta ;
+
+    return diffuseColor;
 }
