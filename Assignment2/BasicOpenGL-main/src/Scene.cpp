@@ -266,50 +266,56 @@ Scene::~Scene()
     }
 }
 
-Intersection Scene::GetHit(Ray &ray)
-{
+Intersection Scene::GetHit(Ray &ray) {
+    // Initialize closestIntersection with proper member values
     Intersection closestIntersection;
     closestIntersection.t = std::numeric_limits<float>::infinity(); // Start with a very large value
     closestIntersection.hitObject = false;
 
-    for (Object *obj : objects)
-    {
-        float t = 0.0f;
-        if (obj->Intersect(ray, t))
-        {
-            if (t < closestIntersection.t)
-            {
-                closestIntersection.t = t;
-                closestIntersection.point = ray.pointAtParameter(t);
+    // Iterate through all objects in the scene
+    for (Object *obj : objects) {
+        float zero  =  0 ;
+        if (obj->tag!=ray.tag) {
+            float t = 0.0f; // Parameter for the intersection
+            if (obj->Intersect(ray, t)) { // If there's an intersection
+                if (t < closestIntersection.t) { // Check if it's the closest one
+                    closestIntersection.t = t;
+                    closestIntersection.point = ray.pointAtParameter(t);
 
-                // Compute the normal at the intersection point and get the material
-             if (obj->isPlane())
-                {
-                    Plane *plane = dynamic_cast<Plane *>(obj);
+                    // Check if the object is a plane
+                    if (obj->isPlane()) {
+                        Plane *plane = dynamic_cast<Plane *>(obj);
 
-                    // Extract the normal from the plane coefficients (a, b, c)
-                    glm::vec3 normal(plane->coefficients.x, plane->coefficients.y, plane->coefficients.z);
+                        // Extract normal from the plane coefficients (a, b, c)
+                        glm::vec3 normal(plane->coefficients.x, plane->coefficients.y, plane->coefficients.z);
 
-                    // Flip the normal if needed (this depends on your scene's setup)
-                    closestIntersection.normal = glm::normalize(-normal);  // Optionally flip the normal
-                    closestIntersection.material = plane->material; // Set material from Plane
-                    closestIntersection.ObjectType = "Plane";       // Set ObjectType to "Plane"
+                        // Flip the normal if needed (depends on scene setup)
+                        closestIntersection.normal = glm::normalize(-normal);  // Optionally flip the normal
+                        closestIntersection.material = plane->material; // Set material from Plane
+                        closestIntersection.ObjectType = "Plane";  // Set ObjectType to "Plane"
+                        closestIntersection.tag = obj->tag;   
+
+                    }
+                    // Check if the object is a sphere
+                    else if (obj->isSphere()) {
+                        Sphere *sphere = dynamic_cast<Sphere *>(obj);
+                        closestIntersection.normal = glm::normalize(closestIntersection.point - sphere->center);
+                        closestIntersection.material = sphere->material; // Set material from Sphere
+                        closestIntersection.ObjectType = "Sphere"; // Set ObjectType to "Sphere"
+                        closestIntersection.tag = obj->tag;   
+
+                    }
+
+                    closestIntersection.hitObject = true; // Mark the intersection as valid
+                    closestIntersection.ObjectStatus = obj->status; // Set the object status
                 }
-                else if (obj->isSphere())
-                {
-                    Sphere *sphere = dynamic_cast<Sphere *>(obj);
-                    closestIntersection.normal = glm::normalize(closestIntersection.point - sphere->center);
-                    closestIntersection.material = sphere->material; // Set material from Sphere
-                    closestIntersection.ObjectType = "Sphere";       // Set ObjectType to "Sphere"
-                }
-
-                closestIntersection.hitObject = true;
             }
         }
     }
 
-    return closestIntersection;
+    return closestIntersection; // Return the closest intersection
 }
+
 
 LightSource *Scene::getLight(int num)
 {
@@ -335,11 +341,13 @@ glm::vec3 Intersection ::getColor()
 // Ray Class
 
 // Default constructor (initialize with zero vectors)
-Ray ::Ray() : origin(glm::vec3(0.0f)), direction(glm::vec3(0.0f)) {}
+//Ray ::Ray() : origin(glm::vec3(0.0f)), direction(glm::vec3(0.0f)) {};
 
 // Constructor with origin and direction
 Ray ::Ray(const glm::vec3 &origin, const glm::vec3 &direction)
-    : origin(origin), direction(glm::normalize(direction)) {} // Normalize the direction vector
+    : origin(origin), direction(glm::normalize(direction)) {
+        tag = -1;
+    } // Normalize the direction vector
 
 // Function to get a point along the ray at a given distance t
 glm::vec3 Ray ::pointAtParameter(float t) const

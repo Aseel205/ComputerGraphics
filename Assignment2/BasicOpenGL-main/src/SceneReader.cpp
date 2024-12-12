@@ -64,7 +64,7 @@
             glm::vec4 objData;
             iss >> objData.x >> objData.y >> objData.z >> objData.w;
             Material material;
-            float status = (token == "o") ? 0.0f : (token == "r") ? 0.5f : 1.0f;
+            int status = (token == "o") ? 0 : (token == "r") ? 1 : 2 ;
             if (objData.w > 0) { // Sphere
                 objects.push_back(new Sphere(status, glm::vec3(objData.x, objData.y, objData.z), objData.w));
             } else { // Plane
@@ -107,34 +107,35 @@
     for (auto light : lights) {
         scene->addLight(light);
     }
+    int tag  = 1 ;
     for (auto object : objects) {
+        object->tag = tag ;
         scene->addObject(object);
+        tag++ ;
     }
 
     return scene;
 }
 
 
-    Ray SceneReader::ConstructRayThroughPixel(int x, int y, Scene& scene) {
-        float aspect_ratio = float(WIDTH) / float(HEIGHT);
-        float viewport_height = 2.5f;
-        float viewport_width = aspect_ratio * viewport_height;
+    Ray SceneReader::ConstructRayThroughPixel(int x, int y, Scene &scene) {
+        // Map pixel (x, y) to normalized device coordinates (NDC)
+        float ndc_x = (x + 0.5f) / WIDTH;  // Add 0.5 to sample pixel center
+        float ndc_y = (y + 0.5f) / HEIGHT;
 
-        // Pixel size in the viewport
-        float pixel_width = viewport_width / float(WIDTH);
-        float pixel_height = viewport_height / float(HEIGHT);
+        // Map NDC to screen coordinates (from -1 to 1 on both axes)
+        float screen_x = -1.0f + 2.0f * ndc_x;
+        float screen_y = -1.0f + 2.0f * ndc_y;
 
-        // Calculate pixel center coordinates in the viewport
-        float pixel_center_x = -viewport_width / 2.0f + (x + 0.5f) * pixel_width;
-        float pixel_center_y = -viewport_height / 2.0f + (y + 0.5f) * pixel_height;
+        // Compute the screen point on the z=0 plane
+        glm::vec3 screen_point(screen_x, screen_y, 0.0f);
 
-        // Ray origin and direction
-        glm::vec3 origin = scene.eye.position;
-        glm::vec3 direction = glm::normalize(glm::vec3(pixel_center_x, pixel_center_y, -1.0f) - origin);
+        // Compute the ray origin (camera position) and direction
+        glm::vec3 origin = scene.eye.position;  // Eye/camera position
+        glm::vec3 direction = glm::normalize(screen_point - origin);
 
         return Ray(origin, direction);
     }
-
 
 
 

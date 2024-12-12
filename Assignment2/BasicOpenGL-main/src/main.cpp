@@ -19,8 +19,8 @@
 #include "phong.h"
 
 /* Window size */
-const unsigned int width = 800;
-const unsigned int height = 800;
+#define WIDTH 800
+#define HEIGHT 800
 
 void SaveImage(const std::vector<std::vector<std::vector<unsigned char>>> &imageArray, const std::string &imageName, const std::string &outputDirectory);
 void RayTrace(Scene &scene, int width, int height, std::string outputImageName, std::string filepath_outputImage);
@@ -36,11 +36,14 @@ int main(int argc, char *argv[])
     SceneReader reader;
     Scene* scene = reader.readScene(filepath_input);
 
-    
-
+    std::cout << "x: " << scene->eye.position.x 
+          << ", y: " << scene->eye.position.y 
+          << ", z: " << scene->eye.position.z 
+          << std::endl;
+ 
     std::cout << "  we are before the ray trace " << std::endl;
 
-    RayTrace(*(scene), width, height, outputImageName, filepath_outputImage);
+    RayTrace(*(scene), WIDTH, HEIGHT, outputImageName, filepath_outputImage);
 
     std::cout << "  we are after the ray trace " << std::endl;
 
@@ -63,7 +66,7 @@ void RayTrace(Scene &scene, int width, int height, std::string outputImageName, 
             Ray ray = SceneReader::ConstructRayThroughPixel(x, flipped_y, scene);
 
             // Calculate the color for the ray at this pixel
-            glm::vec3 color = Phong::calcColor(scene, ray);
+            glm::vec3 color = Phong::calcColor(scene, ray,0);
 
             // Store the RGB values in the image
             image[y][x][0] = static_cast<unsigned char>(255 * glm::clamp(color.r, 0.0f, 1.0f)); // Red
