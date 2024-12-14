@@ -275,7 +275,7 @@ Intersection Scene::GetHit(Ray &ray) {
     // Iterate through all objects in the scene
     for (Object *obj : objects) {
         float zero  =  0 ;
-        if (obj->tag!=ray.tag) {
+          if (obj->id!=ray.objectId) {
             float t = 0.0f; // Parameter for the intersection
             if (obj->Intersect(ray, t)) { // If there's an intersection
                 if (t < closestIntersection.t) { // Check if it's the closest one
@@ -293,7 +293,7 @@ Intersection Scene::GetHit(Ray &ray) {
                         closestIntersection.normal = glm::normalize(-normal);  // Optionally flip the normal
                         closestIntersection.material = plane->material; // Set material from Plane
                         closestIntersection.ObjectType = "Plane";  // Set ObjectType to "Plane"
-                        closestIntersection.tag = obj->tag;   
+                        closestIntersection.objectId = obj->id;   
 
                     }
                     // Check if the object is a sphere
@@ -302,7 +302,7 @@ Intersection Scene::GetHit(Ray &ray) {
                         closestIntersection.normal = glm::normalize(closestIntersection.point - sphere->center);
                         closestIntersection.material = sphere->material; // Set material from Sphere
                         closestIntersection.ObjectType = "Sphere"; // Set ObjectType to "Sphere"
-                        closestIntersection.tag = obj->tag;   
+                        closestIntersection.objectId = obj->id;   
 
                     }
 
@@ -310,7 +310,7 @@ Intersection Scene::GetHit(Ray &ray) {
                     closestIntersection.ObjectStatus = obj->status; // Set the object status
                 }
             }
-        }
+         }
     }
 
     return closestIntersection; // Return the closest intersection
@@ -346,7 +346,7 @@ glm::vec3 Intersection ::getColor()
 // Constructor with origin and direction
 Ray ::Ray(const glm::vec3 &origin, const glm::vec3 &direction)
     : origin(origin), direction(glm::normalize(direction)) {
-        tag = -1;
+        objectId = -1;
     } // Normalize the direction vector
 
 // Function to get a point along the ray at a given distance t

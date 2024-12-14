@@ -48,8 +48,7 @@ glm::vec3 Phong::calcColor(Scene &scene, Ray &ray, int level) {
         // Reflective contribution
         glm::vec3 normal = hit.normal;  // Surface normal
         Ray out_ray = ConstructOutRay(ray, normal, hit.point);
-       // out_ray.tag = hit.tag ; 
-
+        out_ray.objectId = hit.objectId ; 
 
         glm::vec3 reflectedColor = calcColor(scene, out_ray, level + 1);
         color +=   reflectedColor;
@@ -64,7 +63,7 @@ glm::vec3 Phong::calcColor(Scene &scene, Ray &ray, int level) {
         // Transparency contribution (using Snell's Law)
         glm::vec3 normal = hit.normal;
         Ray refractedRay = calcTransparencyRay(ray, normal, hit.point) ; // Calculate refracted ray
-        refractedRay.tag = hit.tag ; 
+        refractedRay.objectId = hit.objectId ; 
         glm::vec3 refractedColor = calcColor(scene, refractedRay, level + 1); // Recursive call for the refracted ray
         color +=  refractedColor;
     }
@@ -73,6 +72,7 @@ glm::vec3 Phong::calcColor(Scene &scene, Ray &ray, int level) {
 }
 
 
+//  for the planes
 glm:: vec3 Phong ::checkerboardColor(glm::vec3 rgbColor, glm :: vec3 hitPoint) {
 // Checkerboard pattern
     float scaleParameter = 0.5f;
@@ -248,7 +248,6 @@ Ray Phong::ConstructOutRay(Ray &ray, glm::vec3 normal, glm::vec3 hitPoint) {
     return Ray(offsetOrigin, glm::normalize(reflectedDirection));
 }
 
-
 Ray Phong::calcTransparencyRay(const Ray &ray, const glm::vec3 &normal, const glm::vec3 &hitPosition) {
     float n1 = 1.0f; // Index of refraction for air
     float n2 = 1.5f; // Refractive index for the material (sphere)
@@ -281,3 +280,4 @@ Ray Phong::calcTransparencyRay(const Ray &ray, const glm::vec3 &normal, const gl
     // Return the refracted ray with the hit position as the origin
     return Ray(hitPosition, glm::normalize(refractedDirection));
 }
+

@@ -13,19 +13,12 @@
 #define WIDTH 800
 #define HEIGHT 800
 
-
-
-
-
 class Ray
 {
 public:
     glm::vec3 origin;    // The origin of the ray
     glm::vec3 direction; // The direction of the ray
-    int tag ;  
-
-    // Default constructor (initialize with zero vectors)
-  //  Ray();
+    int objectId ;  
 
     // Constructor with origin and direction
     Ray(const glm::vec3 &origin, const glm::vec3 &direction);
@@ -96,12 +89,9 @@ public:
 class Object
 {
 public:
-    int status; //  (object , transparent , reflective , 0 , 1 ,2)
+    int status; //  (0,1,2) =>(regular , reflective , tranparent)
     Material material;
-    int tag ;  
-
-
-    //  Object(const Material& material,   int Shininess);
+    int id ; 
 
     virtual bool isSphere() const;
     virtual bool isPlane() const;
@@ -180,7 +170,7 @@ public:
     bool hitObject; // Boolean flag indicating whether the intersection occurred
     std::string ObjectType;
     int ObjectStatus = 1 ; 
-    int tag ; 
+    int objectId ; 
 
     // Default constructor
     Intersection();

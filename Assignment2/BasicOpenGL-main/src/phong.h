@@ -26,7 +26,7 @@ public:
 
 
 private:
-    // Add any private members or helper functions here, if necessary
+
 };
 
 #endif // PHONG_H

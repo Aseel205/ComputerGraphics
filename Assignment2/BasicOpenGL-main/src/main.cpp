@@ -36,11 +36,6 @@ int main(int argc, char *argv[])
     SceneReader reader;
     Scene* scene = reader.readScene(filepath_input);
 
-    std::cout << "x: " << scene->eye.position.x 
-          << ", y: " << scene->eye.position.y 
-          << ", z: " << scene->eye.position.z 
-          << std::endl;
- 
     std::cout << "  we are before the ray trace " << std::endl;
 
     RayTrace(*(scene), WIDTH, HEIGHT, outputImageName, filepath_outputImage);
@@ -50,8 +45,8 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void RayTrace(Scene &scene, int width, int height, std::string outputImageName, std::string filepath_outputImage)
-{
+void RayTrace(Scene &scene, int width, int height, std::string outputImageName, std::string filepath_outputImage) {
+
     std::vector<std::vector<std::vector<unsigned char>>> image(
         height, std::vector<std::vector<unsigned char>>(width, std::vector<unsigned char>(3)));
 
@@ -78,6 +73,7 @@ void RayTrace(Scene &scene, int width, int height, std::string outputImageName, 
     // Save the image to the output file
     SaveImage(image, outputImageName, filepath_outputImage);
 }
+
 
 void SaveImage(const std::vector<std::vector<std::vector<unsigned char>>> &imageArray, const std::string &imageName, const std::string &outputDirectory)
 {
