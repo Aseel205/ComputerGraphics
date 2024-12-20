@@ -91,7 +91,7 @@ class Object
 public:
     int status; //  (0,1,2) =>(regular , reflective , tranparent)
     Material material;
-    int id ; 
+    int ObjectId ; 
 
     virtual bool isSphere() const;
     virtual bool isPlane() const;

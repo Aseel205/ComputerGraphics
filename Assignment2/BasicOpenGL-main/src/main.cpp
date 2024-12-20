@@ -46,33 +46,46 @@ int main(int argc, char *argv[])
 }
 
 void RayTrace(Scene &scene, int width, int height, std::string outputImageName, std::string filepath_outputImage) {
-
+    
+    const int SAMPLES_PER_PIXEL = 1; // Adjust this to control the quality of anti-aliasing
     std::vector<std::vector<std::vector<unsigned char>>> image(
         height, std::vector<std::vector<unsigned char>>(width, std::vector<unsigned char>(3)));
 
     // Iterate over height (Y) first for better cache locality (row-major order)
-    for (int y = 0; y < height; y++)
-    {                                   // Iterate over height (Y)
+    for (int y = 0; y < height; y++) {
         int flipped_y = height - 1 - y; // Flip the Y-coordinate to correct vertical orientation
 
-        for (int x = 0; x < width; x++)
-        { // Iterate over width (X)
-            // Construct the ray for the current pixel (x, flipped_y)
-            Ray ray = SceneReader::ConstructRayThroughPixel(x, flipped_y, scene);
+        for (int x = 0; x < width; x++) {
+            glm::vec3 accumulatedColor(0.0f);
 
-            // Calculate the color for the ray at this pixel
-            glm::vec3 color = Phong::calcColor(scene, ray,0);
+            // Supersampling: Take multiple samples per pixel
+            for (int sample = 0; sample < SAMPLES_PER_PIXEL; sample++) {
+                // Generate jittered sub-pixel coordinates
+                float offsetX = (static_cast<float>(rand()) / RAND_MAX - 0.5f) / width;
+                float offsetY = (static_cast<float>(rand()) / RAND_MAX - 0.5f) / height;
+
+                // Construct ray for the sub-pixel
+                Ray ray = SceneReader::ConstructRayThroughPixel(
+                    x + offsetX, flipped_y + offsetY, scene);
+
+                // Accumulate the color
+                accumulatedColor += Phong::calcColor(scene, ray, 0);
+            }
+
+            // Average the accumulated color
+            glm::vec3 finalColor = accumulatedColor / static_cast<float>(SAMPLES_PER_PIXEL);
 
             // Store the RGB values in the image
-            image[y][x][0] = static_cast<unsigned char>(255 * glm::clamp(color.r, 0.0f, 1.0f)); // Red
-            image[y][x][1] = static_cast<unsigned char>(255 * glm::clamp(color.g, 0.0f, 1.0f)); // Green
-            image[y][x][2] = static_cast<unsigned char>(255 * glm::clamp(color.b, 0.0f, 1.0f)); // Blue
+            image[y][x][0] = static_cast<unsigned char>(255 * glm::clamp(finalColor.r, 0.0f, 1.0f)); // Red
+            image[y][x][1] = static_cast<unsigned char>(255 * glm::clamp(finalColor.g, 0.0f, 1.0f)); // Green
+            image[y][x][2] = static_cast<unsigned char>(255 * glm::clamp(finalColor.b, 0.0f, 1.0f)); // Blue
         }
     }
 
     // Save the image to the output file
     SaveImage(image, outputImageName, filepath_outputImage);
 }
+
 
 
 void SaveImage(const std::vector<std::vector<std::vector<unsigned char>>> &imageArray, const std::string &imageName, const std::string &outputDirectory)

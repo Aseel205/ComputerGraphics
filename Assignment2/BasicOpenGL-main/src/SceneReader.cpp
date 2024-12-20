@@ -130,9 +130,9 @@ Scene *SceneReader::readScene(const std::string &filePath)
     int id = 1;
     for (auto object : objects)
     {
-        object->id = id;
+        object->ObjectId = id;
         scene->addObject(object);
-        id++;
+        id+=1;
     }
 
     return scene;

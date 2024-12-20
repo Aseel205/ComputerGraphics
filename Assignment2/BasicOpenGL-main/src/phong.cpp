@@ -4,73 +4,75 @@
 
 #define MAX_LEVEL 5
 
-
-
 glm::vec3 Phong::calcColor(Scene &scene, Ray &ray, int level) {                         
     // Get the intersection point
     Intersection hit = scene.GetHit(ray);
 
-    int status = hit.ObjectStatus ;  // Object=0.0, Reflective=1, Transparent=2
+    int status = hit.ObjectStatus;  // Object=0.0, Reflective=1, Transparent=2
 
     // Start with emission and ambient components
     glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
 
-
-    // black color (no hit)
+    // Black color (no hit)
     if (!hit.hitObject) {    
         return glm::vec3(0.0f, 0.0f, 0.0f);
     }
 
     // Regular object
     if (status == 0) { 
-          
         color = calcEmissionColor(scene) + calcAmbientColor(scene, hit);
+
         // Add diffuse and specular contributions from all lights
         for (int i = 0; i < scene.getNumLights(); i++) {
             LightSource *light = scene.getLight(i);
 
             if (!occluded(scene, hit, light)) {
-                  if(level!=0) {
-                //     std::cout << "yes" << std ::endl ; 
-                } 
-                glm::vec3 specualrcolor =  calcSpecularColor(scene, hit, light , ray) ; 
-                color += (calcDiffuseColor(scene, hit, light) + specualrcolor) * light->intensity;
+                glm::vec3 specularColor = calcSpecularColor(scene, hit, light, ray); 
+                color += (calcDiffuseColor(scene, hit, light) + specularColor) * light->intensity;
             }
         }
     }
+
     // Reflective object
     else if (status == 1) {
         // Base case for recursion
         if (level >= MAX_LEVEL) {
-                return glm :: vec3(0.0f) ;   // dont add anything
+            return glm::vec3(0.0f);  // Don't add anything
         }
 
         // Reflective contribution
         glm::vec3 normal = hit.normal;  // Surface normal
-        Ray out_ray = ConstructOutRay(ray, normal, hit.point);
-        out_ray.objectId = hit.objectId ; 
+        Ray outRay = ConstructOutRay(ray, normal, hit.point);
+        outRay.objectId = hit.objectId; 
 
-        glm::vec3 reflectedColor = calcColor(scene, out_ray, level + 1);
-        color +=   reflectedColor;
+        glm::vec3 reflectedColor = calcColor(scene, outRay, level + 1);
+        color += reflectedColor;
     }
-    // Transparent object
+
+    // Transparent (Refractive) object
     else if (status == 2) {
-        // Base case for recursion (maximum transparency levels)
+        // Base case for recursion
         if (level >= MAX_LEVEL) {
-          return glm :: vec3(0.0f) ;   // dont add anything 
+            return glm::vec3(0.0f) ;
         }
 
-        // Transparency contribution (using Snell's Law)
+
         glm::vec3 normal = hit.normal;
-        Ray refractedRay = calcTransparencyRay(ray, normal, hit.point) ; // Calculate refracted ray
-        refractedRay.objectId = hit.objectId ; 
-        glm::vec3 refractedColor = calcColor(scene, refractedRay, level + 1); // Recursive call for the refracted ray
-        color +=  refractedColor;
+
+        // Calculate entry refraction ray
+        Ray refractedRay = calcTransparencyRay(ray, normal, hit.point);
+
+        // Simulate exit refraction
+        glm::vec3 exitPoint = hit.point + 0.01f * refractedRay.direction; // Offset exit point slightly to avoid self-intersection
+        Ray exitRay(exitPoint, refractedRay.direction);
+        exitRay.objectId = hit.objectId; 
+        glm::vec3 exitColor = calcColor(scene, exitRay, level + 1);
+
+        color += exitColor;  
     }
 
     return color;
 }
-
 
 //  for the planes
 glm:: vec3 Phong ::checkerboardColor(glm::vec3 rgbColor, glm :: vec3 hitPoint) {
@@ -111,7 +113,6 @@ glm::vec3 Phong::calcEmissionColor(Scene &scene)
 {
     return glm::vec3(0.0f, 0.0f, 0.0f); // No emission
 }
-
 
 
 
@@ -184,7 +185,7 @@ glm::vec3 Phong::calcDiffuseColor(Scene& scene, Intersection &hit, LightSource* 
     return specularColor;
 }
 
-bool Phong::occluded(Scene &scene, Intersection &hit, LightSource *light) {
+    bool Phong::occluded(Scene &scene, Intersection &hit, LightSource *light) {
     glm::vec3 lightDir;
 
     // Determine light direction based on light type
@@ -248,16 +249,19 @@ Ray Phong::ConstructOutRay(Ray &ray, glm::vec3 normal, glm::vec3 hitPoint) {
     return Ray(offsetOrigin, glm::normalize(reflectedDirection));
 }
 
+
+
 Ray Phong::calcTransparencyRay(const Ray &ray, const glm::vec3 &normal, const glm::vec3 &hitPosition) {
     float n1 = 1.0f; // Index of refraction for air
     float n2 = 1.5f; // Refractive index for the material (sphere)
+    float epsilon = 0.001f; // Small offset to prevent self-intersection
 
     glm::vec3 adjustedNormal = normal;
 
     // Compute the cosine of the angle between the ray and the normal
     float cosThetaI = glm::dot(-ray.direction, normal);
 
-    // Adjust normal if the ray is entering the object (inside)
+    // Adjust normal if the ray is exiting the object (from inside to outside)
     if (cosThetaI < 0) {
         cosThetaI = -cosThetaI;
         std::swap(n1, n2);
@@ -268,16 +272,19 @@ Ray Phong::calcTransparencyRay(const Ray &ray, const glm::vec3 &normal, const gl
     float eta = n1 / n2;
     float sinThetaT2 = eta * eta * (1.0f - cosThetaI * cosThetaI);
 
-    // Total internal reflection: no refraction contribution if sinThetaT2 > 1.0
+    // Total internal reflection: reflect the ray
     if (sinThetaT2 > 1.0f) {
-        return Ray(glm::vec3(0.0f), glm::vec3(0.0f)); // No refracted ray due to total internal reflection
+        glm::vec3 reflectionDirection = glm::reflect(ray.direction, adjustedNormal);
+        glm::vec3 originOffset = hitPosition + epsilon * adjustedNormal;
+        return Ray(originOffset, glm::normalize(reflectionDirection));
     }
 
     // Compute the refracted direction using Snell's law
     float cosThetaT = sqrt(1.0f - sinThetaT2);
     glm::vec3 refractedDirection = eta * ray.direction + (eta * cosThetaI - cosThetaT) * adjustedNormal;
 
-    // Return the refracted ray with the hit position as the origin
-    return Ray(hitPosition, glm::normalize(refractedDirection));
-}
+    // Offset the hit position slightly to avoid self-intersection
+    glm::vec3 originOffset = hitPosition + epsilon * adjustedNormal;
 
+    return Ray(originOffset, glm::normalize(refractedDirection));
+}
