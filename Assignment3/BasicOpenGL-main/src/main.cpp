@@ -12,8 +12,9 @@
 #include <Texture.h>
 #include <Camera.h>
 #include <smallCube.h>
-
+#include <RubiksCube.h>
 #include <iostream>
+#include <globals.h>
 
 /* Window size */
 const unsigned int width = 800;
@@ -22,10 +23,9 @@ const unsigned int height = 800;
 const float FOVdegree = 45.0f;  // Field Of View Angle
 const float near = 0.1f;
 const float far = 100.0f;
-std::vector<SmallCube> smallCubes;
+RubiksCube rubiksCube;
 
-/* Shape vertices coordinates with positions, colors, and corrected texCoords */
-/* Cube vertices with positions, colors, and texCoords */
+
 float vertices[] = {
     // positions           // colors           // texCoords
     // Front face
@@ -81,9 +81,10 @@ unsigned int indices[] = {
     20, 21, 22, 22, 23, 20
 };
 
-
 int main(int argc, char* argv[]) {
     GLFWwindow* window;
+    const unsigned int width = 800, height = 600;
+    const float FOVdegree = 45.0f, near = 0.1f, far = 100.0f;
 
     /* Initialize the library */
     if (!glfwInit()) {
@@ -106,11 +107,12 @@ int main(int argc, char* argv[]) {
     gladLoadGL();
     glfwSwapInterval(1);
 
+
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
-   {
+    {
         /* Enable depth testing */
         GLCall(glEnable(GL_DEPTH_TEST));
-
+    
         /* Set up buffers and shaders */
         VertexArray va;
         VertexBuffer vb(vertices, sizeof(vertices));
@@ -138,63 +140,25 @@ int main(int argc, char* argv[]) {
         camera.SetPerspective(FOVdegree, near, far);
         camera.SetPosition(glm::vec3(0.0f, 0.0f, 10.0f)); // Move camera back
         camera.EnableInputs(window);
-         while (!glfwWindowShouldClose(window)) {
 
-            GLCall(glClearColor(0.7f, 0.4f, 0.6f, 1.0f)); // Set background to dark gray
+
+        while (!glfwWindowShouldClose(window)) {
+            GLCall(glClearColor(1.0f, 1.0f, 1.0f, 1.0f)); // Set background to dark gray
             GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
             glm::mat4 view = camera.GetViewMatrix();  // Camera view matrix
             glm::mat4 proj = camera.GetProjectionMatrix();  // Camera projection matrix
 
-            // Loop through the 3x3x3 grid (26 cubes)
-            for (int x = -1; x <= 1; x++) {
-                for (int y = -1; y <= 1; y++) {
-                    for (int z = -1; z <= 1; z++) {
-                        if (x == 0 && y == 0 && z == 0) continue; // Skip center cube
-
-                        // Translation matrix (place cubes closer)
-                        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(x * 0.9f, y * 0.9f, z * 0.9f)); // Adjust spacing
-
-                        // Scale matrix
-                        glm::mat4 scl = glm::scale(glm::mat4(1.0f), glm::vec3(0.9f));
-
-                        // Combine rotation, scale, and translation into the model matrix
-                        glm::mat4 model = trans * scl;
-
-                        // Final MVP matrix = Projection * View * Model
-                        glm::mat4 mvp = proj * view * model;
-
-                        // Assign unique colors for each small cube based on position
-                        glm::vec4 color = glm::vec4(
-                            (x + 1) * 0.5f,  // Red based on x position
-                            (y + 1) * 0.5f,  // Green based on y position
-                            (z + 1) * 0.5f,  // Blue based on z position
-                            1.0f             // Alpha
-                        );
-
-                        // Update shader parameters for each cube face
-                        shader.Bind();
-                        shader.SetUniformMat4f("u_MVP", mvp);
-                        shader.SetUniform1i(" ", 0);
-                        shader.SetUniform4f("u_Color", color);
-
-                        // Bind the vertex array and index buffer before drawing
-                        va.Bind();
-                        ib.Bind();
-                        GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
-                    }
-                }
-            }
+            // Render Rubik's Cube using the RubiksCube class
+            rubiksCube.render(shader, va, ib, proj, view);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
-   }
+    }
 
     glfwTerminate();
     return 0;
 }
-
-
 
  

@@ -16,6 +16,7 @@ private:
 public:
     // Constructor
     SmallCube(int idx, const glm::vec3& pos);
+    SmallCube() ; 
 
     // Getters
     int getIndex() const;
@@ -33,4 +34,9 @@ public:
     void updatePosition(const glm::mat4& transformation);
 };
 
+enum Color {
+    WHITE, YELLOW, BLUE, GREEN, RED, ORANGE
+};
+
 #endif // SMALLCUBE_H
+
