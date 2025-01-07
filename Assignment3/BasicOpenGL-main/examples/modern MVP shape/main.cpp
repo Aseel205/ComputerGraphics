@@ -23,18 +23,72 @@ const float far = 100.0f;
 
 /* Shape vertices coordinates with positions, colors, and corrected texCoords */
 float vertices[] = {
-    // positions            // colors            // texCoords
+    // positions              // colors               // texCoords
+    // Front face
     -0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,  // Bottom-left
      0.5f, -0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,  // Bottom-right
      0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,  // Top-right
     -0.5f,  0.5f,  0.5f,    1.0f, 1.0f, 0.0f,    0.0f, 1.0f,  // Top-left
+
+    // Back face
+    -0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 1.0f,    0.0f, 0.0f,  // Bottom-left
+     0.5f, -0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f,  // Bottom-right
+     0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f,  // Top-right
+    -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f,  // Top-left
+
+    // Left face
+    -0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,  // Bottom-left
+    -0.5f, -0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,  // Bottom-right
+    -0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,  // Top-right
+    -0.5f,  0.5f, -0.5f,    1.0f, 1.0f, 0.0f,    0.0f, 1.0f,  // Top-left
+
+    // Right face
+     0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,  // Bottom-left
+     0.5f, -0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,  // Bottom-right
+     0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,  // Top-right
+     0.5f,  0.5f, -0.5f,    1.0f, 1.0f, 0.0f,    0.0f, 1.0f,  // Top-left
+
+    // Bottom face
+    -0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 1.0f,    0.0f, 0.0f,  // Bottom-left
+     0.5f, -0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f,  // Bottom-right
+     0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f,  // Top-right
+    -0.5f, -0.5f,  0.5f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f,  // Top-left
+
+    // Top face
+    -0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 1.0f,    0.0f, 0.0f,  // Bottom-left
+     0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    1.0f, 0.0f,  // Bottom-right
+     0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 1.0f,    1.0f, 1.0f,  // Top-right
+    -0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f   // Top-left
 };
 
-/* Indices for vertices order */
+
+
 unsigned int indices[] = {
-    0, 1, 2, 
-    2, 3, 0
+    // Front face
+    0, 1, 2,
+    2, 3, 0,
+
+    // Back face
+    4, 5, 6,
+    6, 7, 4,
+
+    // Left face
+    4, 7, 3,
+    3, 0, 4,
+
+    // Right face
+    1, 5, 6,
+    6, 2, 1,
+
+    // Bottom face
+    4, 5, 1,
+    1, 0, 4,
+
+    // Top face
+    3, 2, 6,
+    6, 7, 3
 };
+
 
 int main(int argc, char* argv[])
 {
@@ -114,18 +168,21 @@ int main(int argc, char* argv[])
         while (!glfwWindowShouldClose(window))
         {
             /* Set white background color */
-            GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
+            GLCall(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));  // gllClear  ,  clear rthe screen from the previous frame
 
             /* Render here */
             GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+
 
             /* Initialize uniform color */
             glm::vec4 color = glm::vec4(1.0, 1.0f, 1.0f, 1.0f);
 
              /* Initialize the model Translate, Rotate and Scale matrices */
-            glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-            glm::mat4 rot = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(1.0f));
-            glm::mat4 scl = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+            glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));  // Move the cube backward
+            glm::mat4 rot = glm::rotate(glm::mat4(1.0f), (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));  // Rotate over time
+            glm::mat4 scl = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));  // No scaling
+
 
             /* Initialize the MVP matrices */ 
             glm::mat4 model = trans * rot * scl;

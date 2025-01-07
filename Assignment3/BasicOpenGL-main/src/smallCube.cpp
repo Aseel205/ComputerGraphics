@@ -6,10 +6,6 @@ SmallCube::SmallCube(int idx, const glm::vec3& pos)
     faceColors.fill(glm::vec4(1.0f)); // Default color for all faces (white)
 }
 
-SmallCube::SmallCube()
-{
-}
-
 // Getters
 int SmallCube::getIndex() const {
     return index;
