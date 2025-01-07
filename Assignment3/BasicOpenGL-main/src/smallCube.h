@@ -6,31 +6,31 @@
 #include <array>
 
 class SmallCube {
-private:
-    int index;                          // Unique identifier for the cube
+    
+    public:
     glm::vec3 position;                 // Current position in 3D space
-    glm::vec3 rotationAxis;             // Axis of rotation (if any)
-    float rotationAngle;                // Current rotation angle
-    std::array<glm::vec4, 6> faceColors; // Colors of the six faces
+    glm::mat4 modelMatrix;              // Model matrix for transformations
+    int id ; 
 
-public:
+
     // Constructor
-    SmallCube(int idx, const glm::vec3& pos);
+    SmallCube(const glm::vec3& pos , int id);
+    SmallCube() ; 
 
     // Getters
-    int getIndex() const;
     glm::vec3 getPosition() const;
-    glm::vec3 getRotationAxis() const;
-    float getRotationAngle() const;
-    glm::vec4 getFaceColor(int faceIndex) const;
+    glm::mat4 getModelMatrix() const;   // Getter for the model matrix
+
+
 
     // Setters
     void setPosition(const glm::vec3& pos);
-    void setRotation(const glm::vec3& axis, float angle);
-    void setFaceColor(int faceIndex, const glm::vec4& color);
+    void setModelMatrix(const glm::mat4& matrix); // Setter for the model matrix
 
-    // Update position (e.g., after rotation)
-    void updatePosition(const glm::mat4& transformation);
+
+
 };
 
+
 #endif // SMALLCUBE_H
+

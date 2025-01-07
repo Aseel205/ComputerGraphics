@@ -1,5 +1,16 @@
 #include <Camera.h>
 
+/*
+
+בעזרת פונקציה שנקראת glm::lookAt ניתן לחשב את מטריצת ה-View, על ידי העברת הפרמטרים הבאים:
+glm::vec3 eye – לקבוע את מיקום המצלמה.
+glm::vec3 center – לקבוע לאיזה מרכז מסתכלת המצלמה.
+glm::vec3 up – לקבוע מהו הכיוון למעלה שלנו, כדי לקבוע את זווית ההסתכלות שלנו על המרחב
+
+
+
+*/
+
 void Camera::SetOrthographic(float near, float far)
 {
     m_Near = near;

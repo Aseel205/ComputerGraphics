@@ -1,33 +1,25 @@
 #include "smallCube.h"
 
 // Constructor
-SmallCube::SmallCube(int idx, const glm::vec3& pos)
-    : index(idx), position(pos), rotationAxis(glm::vec3(0.0f)), rotationAngle(0.0f) {
-    faceColors.fill(glm::vec4(1.0f)); // Default color for all faces (white)
+SmallCube::SmallCube(const glm::vec3& pos , int id  )
+    : id(id) , position(pos) {}
+
+SmallCube::SmallCube()
+{
 }
 
-// Getters
-int SmallCube::getIndex() const {
-    return index;
-}
+
 
 glm::vec3 SmallCube::getPosition() const {
     return position;
 }
 
-glm::vec3 SmallCube::getRotationAxis() const {
-    return rotationAxis;
-}
 
-float SmallCube::getRotationAngle() const {
-    return rotationAngle;
-}
 
-glm::vec4 SmallCube::getFaceColor(int faceIndex) const {
-    if (faceIndex >= 0 && faceIndex < 6) {
-        return faceColors[faceIndex];
-    }
-    return glm::vec4(0.0f); // Invalid index, return black
+
+glm::mat4 SmallCube::getModelMatrix() const
+{
+    return modelMatrix ;    // segma
 }
 
 // Setters
@@ -35,19 +27,11 @@ void SmallCube::setPosition(const glm::vec3& pos) {
     position = pos;
 }
 
-void SmallCube::setRotation(const glm::vec3& axis, float angle) {
-    rotationAxis = axis;
-    rotationAngle = angle;
+
+void SmallCube::setModelMatrix(const glm::mat4 &matrix) {
+
+    this->modelMatrix = matrix;
+    // Extract the translation (position) from the model matrix
+    this->position = glm::vec3(matrix[3][0], matrix[3][1], matrix[3][2]);
 }
 
-void SmallCube::setFaceColor(int faceIndex, const glm::vec4& color) {
-    if (faceIndex >= 0 && faceIndex < 6) {
-        faceColors[faceIndex] = color;
-    }
-}
-
-// Update position (e.g., after a rotation)
-void SmallCube::updatePosition(const glm::mat4& transformation) {
-    glm::vec4 newPosition = transformation * glm::vec4(position, 1.0f);
-    position = glm::vec3(newPosition);
-}

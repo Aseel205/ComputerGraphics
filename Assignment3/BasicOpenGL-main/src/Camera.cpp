@@ -1,4 +1,5 @@
 #include <Camera.h>
+#include <globals.h>
 
 void Camera::SetOrthographic(float near, float far)
 {
@@ -14,6 +15,24 @@ void Camera::SetOrthographic(float near, float far)
 // Input Callbacks //
 /////////////////////
 
+void handleRKey();
+void handleLKey();
+void handleUKey();
+void handleDKey();
+void handleBKey();
+void handleFKey();
+void handleSpaceKey();
+void handleZKey();
+void handleAKey();
+
+void handleUpArrow();
+void handleDownArrow(); 
+void handleLeftArrow(); 
+void handleRightArrow();
+
+
+
+
 void KeyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods)
 {
     Camera* camera = (Camera*) glfwGetWindowUserPointer(window);
@@ -27,19 +46,47 @@ void KeyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods
         switch (key)
         {
             case GLFW_KEY_UP:
-                std::cout << "UP Pressed" << std::endl;
+                handleUpArrow();
                 break;
             case GLFW_KEY_DOWN:
-                std::cout << "DOWN Pressed" << std::endl;
+                handleDownArrow();
                 break;
             case GLFW_KEY_LEFT:
-                std::cout << "LEFT Pressed" << std::endl;
+                handleLeftArrow();
                 break;
             case GLFW_KEY_RIGHT:
-                std::cout << "RIGHT Pressed" << std::endl;
+                handleRightArrow();
+                break;
+                case GLFW_KEY_R:
+                handleRKey();
+                break;
+            case GLFW_KEY_L:
+                handleLKey();
+                break;
+            case GLFW_KEY_U:
+                handleUKey();
+                break;
+            case GLFW_KEY_D:
+                handleDKey();
+                break;
+            case GLFW_KEY_B:
+                handleBKey();
+                break;
+            case GLFW_KEY_E:
+                handleFKey();
+                break;
+            case GLFW_KEY_SPACE:
+                handleSpaceKey();
+                break;
+            case GLFW_KEY_Z:
+                handleZKey();
+                break;
+            case GLFW_KEY_A:
+                handleAKey();
                 break;
             default:
-                break;
+                break;    
+           
         }
     }
 }
@@ -76,15 +123,7 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
         // Output mouse motion (for debugging)
         std::cout << "MOUSE LEFT Motion: DeltaX = " << deltaX << ", DeltaY = " << deltaY << std::endl;
 
-        // Adjust the cube's rotation angles based on mouse movement
-        // Apply sensitivity scaling for smoother rotation
-  //      camera->m_RotationAngleX += deltaY * camera->m_RotationSensitivity;
-  //      camera->m_RotationAngleY += deltaX * camera->m_RotationSensitivity;
-
-        // Clamp the rotation angles to avoid extreme values
-  //      camera->m_RotationAngleX = glm::clamp(camera->m_RotationAngleX, -90.0f, 90.0f); // Prevent camera from flipping upside down
-  //      camera->m_RotationAngleY = glm::clamp(camera->m_RotationAngleY, -180.0f, 180.0f); // Limit horizontal rotation range
-
+ 
         // Output the updated rotation angles for debugging
         std::cout << "Updated Rotation Angles: X = " << camera->m_RotationAngleX << ", Y = " << camera->m_RotationAngleY << std::endl;
     }
@@ -204,4 +243,105 @@ void Camera::SetPosition(glm::vec3 vec3) {
 
     this->m_Position = vec3 ; 
     UpdateViewMatrix() ; 
+}
+
+
+void handleRKey() {
+
+    std::cout << "R key pressed "<< std::endl;
+
+    if (rubiksCube.canRotateRightWall()) 
+         rubiksCube.rotateRightWall() ;
+    
+}
+
+void handleLKey() {
+
+    std::cout << "L key pressed " << std::endl;
+
+    if (rubiksCube.canRotateLeftWall()) 
+            rubiksCube.rotateLeftWall() ;
+    
+}
+
+void handleUKey() {
+
+    std::cout << "U key pressed " << std::endl;
+
+    if (rubiksCube.canRotateUpWall()) 
+            rubiksCube.rotateUpWall() ;
+
+}
+
+
+void handleDKey() {
+
+    std::cout << "D key pressed " << std::endl;
+
+    if (rubiksCube.canRotateDownWall()) 
+            rubiksCube.rotateDownWall() ;
+
+}
+
+void handleBKey() {
+
+        std::cout << "B key pressed" << std::endl;
+        if (rubiksCube.canRotateBackWall()) 
+            rubiksCube.rotateBackWall() ;
+
+}
+
+void handleFKey() {
+
+        std::cout << "F key pressed" << std::endl;
+        if (rubiksCube.canRotateFrontWall()) 
+                rubiksCube.rotateFrontWall() ;
+
+}
+
+void handleSpaceKey() {
+    std::cout << "Space key pressed - Flip Rotation Direction" << std::endl;
+            rubiksCube.rotation_direction = -rubiksCube.rotation_direction  ;  
+}
+
+void handleZKey() {
+    std::cout << "Z key pressed - Divide Rotation Angle by 2" << std::endl;
+            rubiksCube.RotationAngle = std::max(rubiksCube.RotationAngle / 2, 45);
+    std :: cout <<  "the new angle is " << rubiksCube.RotationAngle *  rubiksCube.rotation_direction ; 
+}
+
+void handleAKey() {
+    std::cout << "A key pressed - Multiply Rotation Angle by 2" << std::endl;
+            rubiksCube.RotationAngle = std::min(rubiksCube.RotationAngle*2, 180);
+    std :: cout <<  "the new angle is " << rubiksCube.RotationAngle *  rubiksCube.rotation_direction ; 
+
+
+}
+
+
+
+void handleUpArrow() {
+    
+    std::cout << "UP Arrow " << std::endl;
+    rubiksCube.UpArrow() ; 
+}
+
+    
+void handleDownArrow() {
+    
+   std::cout << "Down Arrow " << std::endl;
+    rubiksCube.DownArrow() ; 
+
+}
+
+void handleLeftArrow() {
+    
+     std::cout << "Left Arrow " << std::endl;
+    rubiksCube.LeftArrow() ; 
+}
+
+void handleRightArrow() {
+
+    std::cout << "Right Arrow " << std::endl;
+    rubiksCube.RightArrow() ; 
 }
