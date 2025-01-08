@@ -23,14 +23,11 @@ public:
     void generateSmallCubes();  // Generate all the small cubes
     void render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::mat4 proj, glm::mat4 view);
 
-    // Getter for small cubes (in case you need to access them directly)
-    std::vector<SmallCube> getSmallCubes() { return smallCubes; }
-
-    bool locks[6]; // 0: Front, 1: Back, 2: Left, 3: Right, 4: Up, 5: Down
-
-    std::vector<std::vector<std::vector<SmallCube>>> cubesPosition ; 
 
 
+    bool locks[6]; 
+    std::vector<std::vector<std::vector<SmallCube*>>> cubesPosition ;  
+    
 
 
 
@@ -57,17 +54,10 @@ public:
     void RightArrow () ; 
 
  
-
-
-
-
-
-private:
-    std::vector<SmallCube> smallCubes;  // Store all the small cubes in the Rubik's Cube
-    void updateSmallCubePosition(int index, const glm::vec3& position);
-    void updateSmallCubeRotation(int index, const glm::mat4& rotationMatrix);
-    void rotateLayer(int layerIndex, const glm::mat4& rotationMatrix);
-
+    glm :: vec3 getPosition () ;  
+    std::vector<SmallCube*> getSmallCubes() ; 
+    std::vector<SmallCube*> smallCubes;  // Store all the small cubes in the Rubik's Cube
+    SmallCube* centerCube;
 
 
 
