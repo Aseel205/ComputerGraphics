@@ -19,7 +19,6 @@
 /* Window size */
 const unsigned int width = 800;
 const unsigned int height = 800;
-// const float FOVdegree = 45.0f;  // Field Of View Angle
 const float FOVdegree = 45.0f;  // Field Of View Angle
 const float near = 0.1f;
 const float far = 100.0f;

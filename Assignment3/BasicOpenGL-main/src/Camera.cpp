@@ -72,7 +72,7 @@ void KeyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods
             case GLFW_KEY_B:
                 handleBKey();
                 break;
-            case GLFW_KEY_E:
+            case GLFW_KEY_F:
                 handleFKey();
                 break;
             case GLFW_KEY_SPACE:

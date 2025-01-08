@@ -10,11 +10,11 @@ class SmallCube {
     public:
     glm::vec3 position;                 // Current position in 3D space
     glm::mat4 modelMatrix;              // Model matrix for transformations
-    int id ; 
+    int index ; 
 
 
     // Constructor
-    SmallCube(const glm::vec3& pos , int id);
+    SmallCube(const glm::vec3& pos , int index);
     SmallCube() ; 
 
     // Getters
