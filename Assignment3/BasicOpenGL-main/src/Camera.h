@@ -56,6 +56,7 @@ class Camera
 
         // Sensitivity for mouse input (how fast the camera rotates based on mouse movement)
         float m_RotationSensitivity = 0.1f;
+        
 
         Camera(int width, int height ,  RubiksCube& rubiksCube )
             : m_Width(width), m_Height(height ) , rubiksCube(rubiksCube)     {};
