@@ -121,6 +121,7 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
             // Combine the rotation matrices
             glm::mat4 finalRotationMatrix = rotationMatrixY * rotationMatrixX;
 
+<<<<<<< HEAD
            //   camera->rubiksCube.RotationMatrix =  finalRotationMatrix  * camera->rubiksCube.RotationMatrix ; 
 
 
@@ -131,6 +132,12 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
             }
 
             
+=======
+            // Apply the combined rotation matrix to all cubes in the Rubik's Cube
+            for (SmallCube* cube : camera->rubiksCube.getSmallCubes()) {
+                cube->setModelMatrix(finalRotationMatrix * cube->getModelMatrix());      
+            }
+>>>>>>> e4b52d176459ac3567788a93c1f1da257a457997
     }
 
   // Mouse rigth motion , when you click and mve the mouse  
