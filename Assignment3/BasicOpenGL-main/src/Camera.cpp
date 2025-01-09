@@ -102,14 +102,29 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
 
 
         // Check if left mouse button is pressed to trigger rotation
- if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-    {
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
+        
         // Output mouse motion (for debugging)
-        std::cout << "MOUSE LEFT Motion: DeltaX = " << deltaX << ", DeltaY = " << deltaY << std::endl;
+          std::cout << "MOUSE LEFT Motion: DeltaX = " << deltaX << ", DeltaY = " << deltaY << std::endl;
 
- 
-        // Output the updated rotation angles for debugging
-        std::cout << "Updated Rotation Angles: X = " << camera->m_RotationAngleX << ", Y = " << camera->m_RotationAngleY << std::endl;
+
+            float rotationAngleY = deltaX * camera->m_RotationSensitivity;
+            float rotationAngleX = deltaY * camera->m_RotationSensitivity;
+
+            // Optional: Clamp the X axis rotation to avoid excessive tilting
+            rotationAngleX = glm::clamp(rotationAngleX, -89.0f, 89.0f);
+
+            // Precompute the rotation matrices only once
+            glm::mat4 rotationMatrixX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationAngleX), glm::vec3(1.0f, 0.0f, 0.0f));
+            glm::mat4 rotationMatrixY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationAngleY), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            // Combine the rotation matrices
+            glm::mat4 finalRotationMatrix = rotationMatrixY * rotationMatrixX;
+
+            // Apply the combined rotation matrix to all cubes in the Rubik's Cube
+            for (SmallCube* cube : camera->rubiksCube.getSmallCubes()) {
+                cube->setModelMatrix(finalRotationMatrix * cube->getModelMatrix());      
+            }
     }
 
   // Mouse rigth motion , when you click and mve the mouse  
@@ -285,19 +300,19 @@ void  Camera :: handleFKey() {
 
 void  Camera :: handleSpaceKey() {
     std::cout << "Space key pressed - Flip Rotation Direction" << std::endl;
-            rubiksCube.rotation_direction = -rubiksCube.rotation_direction  ;  
+            rubiksCube.RotationDirection = -rubiksCube.RotationDirection  ;  
 }
 
 void  Camera :: handleZKey() {
     std::cout << "Z key pressed - Divide Rotation Angle by 2" << std::endl;
             rubiksCube.RotationAngle = std::max(rubiksCube.RotationAngle / 2, 45);
-    std :: cout <<  "the new angle is " << rubiksCube.RotationAngle *  rubiksCube.rotation_direction ; 
+    std :: cout <<  "the new angle is " << rubiksCube.RotationAngle *  rubiksCube.RotationDirection ; 
 }
 
 void  Camera :: handleAKey() {
     std::cout << "A key pressed - Multiply Rotation Angle by 2" << std::endl;
             rubiksCube.RotationAngle = std::min(rubiksCube.RotationAngle*2, 180);
-    std :: cout <<  "the new angle is " << rubiksCube.RotationAngle *  rubiksCube.rotation_direction ; 
+    std :: cout <<  "the new angle is " << rubiksCube.RotationAngle *  rubiksCube.RotationDirection ; 
 
 
 }
