@@ -1,4 +1,6 @@
 #include <Camera.h>
+#include <chrono>
+#include <thread>
 
 void Camera::SetOrthographic(float near, float far)
 {
@@ -68,6 +70,9 @@ void KeyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods
             case GLFW_KEY_A:
                 camera->handleAKey();
                 break;
+            case GLFW_KEY_M:
+                camera->handleMKey();    
+                break;
             default:
                 break;    
         }
@@ -121,7 +126,6 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
             // Combine the rotation matrices
             glm::mat4 finalRotationMatrix = rotationMatrixY * rotationMatrixX;
 
-<<<<<<< HEAD
            //   camera->rubiksCube.RotationMatrix =  finalRotationMatrix  * camera->rubiksCube.RotationMatrix ; 
 
 
@@ -132,12 +136,6 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
             }
 
             
-=======
-            // Apply the combined rotation matrix to all cubes in the Rubik's Cube
-            for (SmallCube* cube : camera->rubiksCube.getSmallCubes()) {
-                cube->setModelMatrix(finalRotationMatrix * cube->getModelMatrix());      
-            }
->>>>>>> e4b52d176459ac3567788a93c1f1da257a457997
     }
 
   // Mouse rigth motion , when you click and mve the mouse  
@@ -330,6 +328,56 @@ void  Camera :: handleAKey() {
 
 }
 
+void Camera::handleMKey() {
+    std::cout << "M key pressed - the Mixer Will start the work .. " << std::endl; 
+
+    // Open the file to store mixer actions
+    std::ofstream mixerFile("mixer.txt");
+    if (!mixerFile.is_open()) {
+        std::cerr << "Error: Unable to open mixer.txt for writing. Check file permissions or directory." << std::endl;
+        return;
+    }
+
+    std::cout << "File mixer.txt opened successfully." << std::endl;
+
+    // Define possible actions and their names
+    const std::vector<std::pair<char, std::string>> actions = {
+        {'R', "Right wall rotation (90 degrees clockwise)"},
+        {'L', "Left wall rotation (90 degrees clockwise)"},
+        {'U', "Up wall rotation (90 degrees clockwise)"},
+        {'D', "Down wall rotation (90 degrees clockwise)"},
+        {'B', "Back wall rotation (90 degrees clockwise)"},
+        {'F', "Front wall rotation (90 degrees clockwise)"}
+    };
+
+    // Generate random number of actions
+    int actionCount = 50 + (std::rand() % 50); // Random number between 50 and 70
+    std::cout << "Number of actions to perform: " << actionCount << std::endl;
+
+    for (int i = 0; i < actionCount; ++i) {
+        // Select a random action
+        const auto& action = actions[std::rand() % actions.size()];
+
+        // Perform the action (simulate pressing a key)
+        switch (action.first) {
+            case 'R': handleRKey(); break;
+            case 'L': handleLKey(); break;
+            case 'U': handleUKey(); break;
+            case 'D': handleDKey(); break;
+            case 'B': handleBKey(); break;
+            case 'F': handleFKey(); break;
+        }
+
+        // Write the action description to the file
+        mixerFile << action.second << std::endl;
+
+
+    }
+
+    mixerFile.close();
+    std::cout << "Mixer actions have been written to mixer.txt." << std::endl;
+}
+
 
 
 void  Camera :: handleUpArrow() {
@@ -357,3 +405,4 @@ void Camera :: handleRightArrow() {
     std::cout << "Right Arrow " << std::endl;
     rubiksCube.RightArrow() ; 
 }
+
