@@ -71,7 +71,7 @@ void KeyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods
                 camera->handleAKey();
                 break;
             case GLFW_KEY_M:
-                camera->handleMKey();    
+                std::thread([camera]() { camera->handleMKey(); }).detach();
                 break;
             default:
                 break;    
@@ -405,4 +405,3 @@ void Camera :: handleRightArrow() {
     std::cout << "Right Arrow " << std::endl;
     rubiksCube.RightArrow() ; 
 }
-
