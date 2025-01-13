@@ -484,4 +484,8 @@ void Camera :: handleRightArrow() {
 
     std::cout << "Right Arrow " << std::endl;
     rubiksCube.RightArrow() ; 
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> a7782a950124dca52e21b8d2c418bd91f5a027fa
