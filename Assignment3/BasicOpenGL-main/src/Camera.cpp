@@ -89,16 +89,48 @@ void KeyCallback(GLFWwindow* window, int key, int scanCode, int action, int mods
 
 
 void MouseButtonCallback(GLFWwindow* window, double currMouseX, double currMouseY)
-{
+{   
+    Camera* camera = (Camera*) glfwGetWindowUserPointer(window);
+    if (!camera) {
+        std::cout << "Warning: Camera wasn't set as the Window User Pointer! KeyCallback is skipped" << std::endl;
+        return;
+    }
+
+
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
         std::cout << "MOUSE LEFT Click" << std::endl;
     }
-    else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
-    {
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
         std::cout << "MOUSE RIGHT Click" << std::endl;
+
+        if (camera->rubiksCube.pickingMode) {
+            // Get mouse position
+            double mouseX, mouseY;
+            glfwGetCursorPos(window, &mouseX, &mouseY);
+
+            // Flip Y-coordinate for OpenGL origin
+            int flippedY = camera->m_Height - static_cast<int>(mouseY);
+
+            // Read the color from the back buffer
+            unsigned char color_picked[4] = {0, 0, 0, 0};
+            glReadPixels(static_cast<int>(mouseX), flippedY, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, color_picked);
+
+            // Decode the color to get the shape ID
+            int color_id = color_picked[0] | (color_picked[1] << 8) | (color_picked[2] << 16);
+            int shapeID = color_id - 1;
+
+            // Output the color and shape ID
+            std::cout << "Selected Color: [R: " << static_cast<int>(color_picked[0])
+                      << ", G: " << static_cast<int>(color_picked[1])
+                      << ", B: " << static_cast<int>(color_picked[2]) << "]" << std::endl;
+            std::cout << "Shape ID: " << shapeID << std::endl;
+        }
     }
 }
+
+
+
 
 void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
 {
@@ -382,8 +414,9 @@ void Camera::handleMKey() {
 void Camera::handleSKey() {}
 
 void Camera::handlePKey(){
-
-this->rubiksCube.pickingMode = !this->rubiksCube.pickingMode ; 
+std::cout << "the key p pressed" <<  std :: endl ; 
+this->rubiksCube.pickingMode = !this->rubiksCube.pickingMode ;  
+std :: cout <<  "the Picking mode is " << rubiksCube.pickingMode  << std:: endl ;
 
 }
 
@@ -484,8 +517,4 @@ void Camera :: handleRightArrow() {
 
     std::cout << "Right Arrow " << std::endl;
     rubiksCube.RightArrow() ; 
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> a7782a950124dca52e21b8d2c418bd91f5a027fa

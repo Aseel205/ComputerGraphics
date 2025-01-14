@@ -68,9 +68,12 @@ glm::vec3 RubiksCube::getPosition(){
 
 
 
-   
 void RubiksCube::render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::mat4 proj, glm::mat4 view) {
     int index = 0; // To assign unique colors for picking
+
+    // Clear buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
     for (SmallCube* cube : smallCubes) {
         glm::mat4 model = cube->RotationMatrix * cube->getModelMatrix();
@@ -79,35 +82,37 @@ void RubiksCube::render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::m
         shader.Bind();
 
         if (pickingMode) {
-            // Picking mode: Use unique color for each cube
+            // Encode unique color for each cube
             glm::vec3 uniqueColor = glm::vec3(
-                (index % 256) / 255.0f,
-                ((index / 256) % 256) / 255.0f,
-                ((index / (256 * 256)) % 256) / 255.0f
+                (index & 0xFF),                // Red channel
+                ((index >> 8) & 0xFF),        // Green channel
+                ((index >> 16) & 0xFF)        // Blue channel
             );
-            glm::vec4 pickingColor = glm::vec4(uniqueColor, 1.0f); // Create an lvalue
-            shader.SetPickingMode(true); // Enable picking mode in the shader
+            glm::vec4 pickingColor = glm::vec4(uniqueColor / 255.0f, 1.0f);
+            shader.SetPickingMode(true);
             shader.SetUniform4f("u_Color", pickingColor);
         } else {
-            // Normal rendering mode
+            // Normal rendering
+            shader.SetPickingMode(false);
             glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // Default color
-            shader.SetPickingMode(false); // Disable picking mode in the shader
             shader.SetUniform4f("u_Color", color);
         }
 
-        // Set uniform variables for the shader
+        // Set MVP matrix
         shader.SetUniformMat4f("u_MVP", mvp);
-        shader.SetUniform1i("u_Texture", 0);
 
-        // Render the small cube
+        // Render cube
         va.Bind();
         ib.Bind();
         GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
 
         shader.Unbind();
-        index++;
+        index++; // Increment index for unique color
     }
 }
+
+
+
 
 
 
