@@ -102,9 +102,9 @@ void MouseButtonCallback(GLFWwindow* window, double currMouseX, double currMouse
         std::cout << "MOUSE LEFT Click" << std::endl;
     }
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-        std::cout << "MOUSE RIGHT Click" << std::endl;
+           std::cout << "MOUSE RIGHT Click" << std::endl;
 
-        if (camera->rubiksCube.pickingMode) {
+            if (camera->rubiksCube.pickingMode) {
             // Get mouse position
             double mouseX, mouseY;
             glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -117,16 +117,30 @@ void MouseButtonCallback(GLFWwindow* window, double currMouseX, double currMouse
             glReadPixels(static_cast<int>(mouseX), flippedY, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, color_picked);
 
             // Decode the color to get the shape ID
-            int color_id = color_picked[0] | (color_picked[1] << 8) | (color_picked[2] << 16);
-            int shapeID = color_id - 1;
+            int color_id = color_picked[0] ;
+            int shapeID = color_id  ;
+
+                if(shapeID < 0 ||shapeID > 26) 
+                    camera->rubiksCube.selectedCube = nullptr ; 
+
+            for (SmallCube * cube : camera->rubiksCube.smallCubes) { 
+                    if(cube->index == shapeID) {
+                        camera->rubiksCube.selectedCube = cube ; 
+                        std :: cout << " the selceed cube is " << cube->index << std::endl ; 
+                            break ; 
+                    }
+            }
+            
+            ////////////
 
             // Output the color and shape ID
             std::cout << "Selected Color: [R: " << static_cast<int>(color_picked[0])
                       << ", G: " << static_cast<int>(color_picked[1])
                       << ", B: " << static_cast<int>(color_picked[2]) << "]" << std::endl;
             std::cout << "Shape ID: " << shapeID << std::endl;
-        }
-    }
+        
+            }
+     }
 }
 
 
@@ -152,6 +166,40 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
         // Output mouse motion (for debugging)
 
 
+        if(camera->rubiksCube.pickingMode) {
+            
+            SmallCube *   cube  = camera->rubiksCube.selectedCube ; 
+            if (cube) {
+
+                    // Calculate rotation angles based on mouse motion
+                float rotationAngleY = deltaX * camera->m_RotationSensitivity;
+                float rotationAngleX = deltaY * camera->m_RotationSensitivity;
+
+                // Clamp rotation angles if needed
+                rotationAngleX = glm::clamp(rotationAngleX, -89.0f, 89.0f);
+
+                // Create rotation matrices for X and Y axes
+
+                glm::mat4 translationToOrigin = glm::translate(-cube->getPosition()); // Translate by (-x1, -y1, -z1)
+
+                glm::mat4 rotationMatrixX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationAngleX), glm::vec3(1.0f, 0.0f, 0.0f));
+                glm::mat4 rotationMatrixY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationAngleY), glm::vec3(0.0f, 1.0f, 0.0f));
+
+                glm::mat4 translateBack = glm::translate(cube->getPosition());  
+                 
+
+                glm::mat4 finalMatrix =  translateBack *   rotationMatrixY    *  rotationMatrixX    * translationToOrigin;  
+                cube->setModelMatrix(finalMatrix * cube->getModelMatrix());  
+
+
+
+                // Apply the rotation to the selected cube
+
+
+            }
+        }
+
+        else {
             float rotationAngleY = deltaX * camera->m_RotationSensitivity;
             float rotationAngleX = deltaY * camera->m_RotationSensitivity;
 
@@ -173,6 +221,7 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
             for (SmallCube* cube : camera->rubiksCube.getSmallCubes()) {
                 cube->setRotationMatrix(  finalRotationMatrix * cube->RotationMatrix)  ;       
             }
+        }
 
             
     }
@@ -181,8 +230,37 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
     else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
     {
             
+
         // Handle motion for the right mouse button
         
+        if(camera->rubiksCube.pickingMode) {
+
+            SmallCube *   cube  = camera->rubiksCube.selectedCube ; 
+
+            if (cube) {
+
+                        // Calculate translation based on mouse motion
+                    float sensitivity = 0.02 *camera->m_Position.z /15  ; // Adjust translation sensitivity
+                    glm::vec3 translation(
+                        deltaX * sensitivity, // Horizontal mouse motion
+                        -deltaY * sensitivity, // Vertical mouse motion (inverted to match screen coordinates)
+                        0.0f // No translation along the Z-axis
+                    );
+
+                    // Update cube's position
+                    glm::vec3 newPosition = cube->getPosition() + translation;
+                    cube->setPosition(newPosition);
+
+                    // Update the cube's model matrix
+                    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), newPosition);
+                    cube->setModelMatrix(translationMatrix);
+
+            }
+
+
+        }
+
+        else {
             float sensitivity = 0.005f; // Adjust movement speed
 
             // Update camera position based on mouse motion
@@ -192,7 +270,7 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
             // Update the view matrix
             camera->UpdateViewMatrix();
 
-           
+        }
 
     
     }

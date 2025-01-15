@@ -32,7 +32,7 @@ public:
     bool locks[6]; 
     std::vector<SmallCube*> smallCubes;  // Store all the small cubes in the Rubik's Cube
     SmallCube* centerCube;
-
+    SmallCube* selectedCube ; 
 
 
     // Rotaions  

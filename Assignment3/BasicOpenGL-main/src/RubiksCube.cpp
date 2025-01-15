@@ -67,9 +67,7 @@ glm::vec3 RubiksCube::getPosition(){
 
 
 
-
 void RubiksCube::render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::mat4 proj, glm::mat4 view) {
-    int index = 0; // To assign unique colors for picking
 
     // Clear buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -83,11 +81,8 @@ void RubiksCube::render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::m
 
         if (pickingMode) {
             // Encode unique color for each cube
-            glm::vec3 uniqueColor = glm::vec3(
-                (index & 0xFF),                // Red channel
-                ((index >> 8) & 0xFF),        // Green channel
-                ((index >> 16) & 0xFF)        // Blue channel
-            );
+            glm::vec3 uniqueColor = glm::vec3( cube->index , cube->index  , cube->index ) ; 
+             
             glm::vec4 pickingColor = glm::vec4(uniqueColor / 255.0f, 1.0f);
             shader.SetPickingMode(true);
             shader.SetUniform4f("u_Color", pickingColor);
@@ -107,12 +102,8 @@ void RubiksCube::render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::m
         GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
 
         shader.Unbind();
-        index++; // Increment index for unique color
     }
 }
-
-
-
 
 
 
