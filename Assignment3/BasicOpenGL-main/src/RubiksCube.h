@@ -7,6 +7,7 @@
 #include <Shader.h>
 #include <VertexArray.h>
 #include <IndexBuffer.h>
+#include <GLFW/glfw3.h>
 
 
 
@@ -25,7 +26,7 @@ public:
 
 
     void generateSmallCubes();  // Generate all the small cubes
-    void render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::mat4 proj, glm::mat4 view);
+    void render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::mat4 proj, glm::mat4 view ,  GLFWwindow* window );
 
 
 

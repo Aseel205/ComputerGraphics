@@ -247,13 +247,11 @@ void CursorPosCallback(GLFWwindow* window, double currMouseX, double currMouseY)
                         0.0f // No translation along the Z-axis
                     );
 
-                    // Update cube's position
-                    glm::vec3 newPosition = cube->getPosition() + translation;
-                    cube->setPosition(newPosition);
+                    
 
                     // Update the cube's model matrix
-                    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), newPosition);
-                    cube->setModelMatrix(translationMatrix);
+                    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), translation);
+                    cube->setModelMatrix(translationMatrix * cube->getModelMatrix() );
 
             }
 

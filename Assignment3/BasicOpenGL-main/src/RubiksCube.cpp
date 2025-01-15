@@ -1,6 +1,8 @@
 #include "RubiksCube.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <GLFW/glfw3.h>
+#include <Camera.h>
 
 
 const float epsilon = 0.0001f;  // Define a small tolerance value
@@ -65,47 +67,58 @@ glm::vec3 RubiksCube::getPosition(){
      return  this -> centerCube->getPosition() ; 
 }
 
-
-
-void RubiksCube::render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::mat4 proj, glm::mat4 view) {
-
-    // Clear buffers
+void RubiksCube::render(Shader& shader, VertexArray& va, IndexBuffer& ib, glm::mat4 proj, glm::mat4 view, GLFWwindow* window) {
+    // -------- Normal Rendering Pass (Visible) --------
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
     for (SmallCube* cube : smallCubes) {
         glm::mat4 model = cube->RotationMatrix * cube->getModelMatrix();
         glm::mat4 mvp = proj * view * model;
 
         shader.Bind();
-
-        if (pickingMode) {
-            // Encode unique color for each cube
-            glm::vec3 uniqueColor = glm::vec3( cube->index , cube->index  , cube->index ) ; 
-             
-            glm::vec4 pickingColor = glm::vec4(uniqueColor / 255.0f, 1.0f);
-            shader.SetPickingMode(true);
-            shader.SetUniform4f("u_Color", pickingColor);
-        } else {
-            // Normal rendering
-            shader.SetPickingMode(false);
-            glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // Default color
-            shader.SetUniform4f("u_Color", color);
-        }
-
-        // Set MVP matrix
+        glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        shader.SetPickingMode(false);
+        shader.SetUniform4f("u_Color", color);
         shader.SetUniformMat4f("u_MVP", mvp);
 
-        // Render cube
         va.Bind();
         ib.Bind();
         GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
 
         shader.Unbind();
     }
+
+    glfwSwapBuffers(window);
+
+
+    if (pickingMode) {
+        // -------- Picking Pass (Invisible) --------
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        for (SmallCube* cube : smallCubes) {
+            glm::mat4 model = cube->RotationMatrix * cube->getModelMatrix();
+            glm::mat4 mvp = proj * view * model;
+
+            shader.Bind();
+            glm::vec3 uniqueColor = glm::vec3(cube->index, cube->index, cube->index);
+            glm::vec4 pickingColor = glm::vec4(uniqueColor / 255.0f, 1.0f);
+            shader.SetPickingMode(true);
+            shader.SetUniform4f("u_Color", pickingColor);
+            shader.SetUniformMat4f("u_MVP", mvp);
+
+            va.Bind();
+            ib.Bind();
+            GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
+
+            shader.Unbind();
+        }
+
+        // Ensure picking happens here
+        glFlush();
+        glFinish();
+       // return; // Skip normal rendering if in picking mode
+    }
+    
 }
-
-
 
 
 void RubiksCube::rotateRightWall(){

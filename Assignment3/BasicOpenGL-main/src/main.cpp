@@ -152,9 +152,8 @@ int main(int argc, char* argv[]) {
             // Render Rubik's Cube using the RubiksCube class
 
             
-                rubiksCube.render(shader, va, ib, proj, view);
+            rubiksCube.render(shader, va, ib, proj, view , window);
 
-            glfwSwapBuffers(window);
             glfwPollEvents();
         }
     }
