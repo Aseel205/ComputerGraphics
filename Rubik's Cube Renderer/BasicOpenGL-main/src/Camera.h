@@ -73,7 +73,7 @@ class Camera
         inline glm::mat4 GetViewMatrix() const { return m_View; }
         inline glm::mat4 GetProjectionMatrix() const { return m_Projection; }
 
-        // Aseel functions  
+
         void UpdateViewMatrix(); // Update the view matrix with rotation
 
         // Rotations
@@ -93,12 +93,13 @@ class Camera
         void handleLeftArrow(); 
         void handleRightArrow();
 
-        // Bounus 
-        void handleMKey();
-        void handleSKey() ; 
-
         //Color Picking
         void handlePKey() ; 
+
+        // Bounus 
+        void handleMKey();
+
+       
 
 
 

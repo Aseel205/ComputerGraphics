@@ -12,6 +12,7 @@
 
 
 class RubiksCube {
+    
 public:
 
     int  RotationDirection   ;    // global varibale for rotation direction
@@ -62,18 +63,6 @@ public:
     //  getters 
     glm :: vec3 getPosition () ;  
     std::vector<SmallCube*> getSmallCubes() ; 
-
-
-    // ColorPicking :
-
-    void translatePickedCube(int pickedIndex, glm::vec3 translationVector) ; 
-
-    void rotatePickedCube(int pickedIndex, glm::vec3 rotationAxis, float angle) ; 
-
-
-
-    
-
 
 
     private : 
